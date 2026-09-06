@@ -78,10 +78,10 @@ public:
       }
     }
 
-    win_reg[0][4] = p0;
-    win_reg[1][4] = p1;
-    win_reg[2][4] = p2;
-    win_reg[3][4] = p3;
+    win_reg[0][4] = p3;
+    win_reg[1][4] = p2;
+    win_reg[2][4] = p1;
+    win_reg[3][4] = p0;
     win_reg[4][4] = pixel_in;
 
     bool isValid = (row_count >= 4) && (col_count >= 4);

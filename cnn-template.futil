@@ -44,10 +44,109 @@ component lineBuffer(pixel_in_c0: 32, @go go: 1) -> (
     reg_4_3 = std_reg(32)
     reg_4_4 = std_reg(32)
 
+    reg_col_count = std_reg(32)
+    row_col_count = std_reg(32)
+
+    reg_p0 = std_reg(32)
+    reg_p1 = std_reg(32)
+    reg_p2 = std_reg(32)
+    reg_p3 = std_reg(32)
+
+    adder0 = std_add(32)
+    adder1 = std_add(32)
   }
 
   wires {
+    group read_buffer_r0 {
+       mem_0.addr0 = 1'd0 
+       mem_0.content_en = 1'd0
+       mem_0.write_en = 0'd0
+       reg_p0.in = mem_0.read_data
+    }
+    group read_buffer_r1 {
+       mem_1.addr0 = 1'd0 
+       mem_1.content_en = 1'd0
+       mem_1.write_en = 0'd0
+       reg_p1.in = mem_1.read_data
+    }
+    group read_buffer_r2 {
+       mem_2.addr0 = 1'd0 
+       mem_2.content_en = 1'd0
+       mem_2.write_en = 0'd0
+       reg_p2.in = mem_2.read_data
+    }
+    group read_buffer_r3 {
+       mem_3.addr0 = 1'd0 
+       mem_3.content_en = 1'd0
+       mem_3.write_en = 0'd0
+       reg_p3.in = mem_3.read_data
+    }
 
+    group write_buffer_r0 {
+       mem_0.addr0 = 1'd0
+       mem_0.content_en = 1'd0
+       mem_0.write_en = 1'd0
+       mem_0.write_data = pixel_in_c0.out
+    }
+
+    group write_buffer_r1 {
+       mem_1.addr0 = 1'd0
+       mem_1.content_en = 1'd0
+       mem_1.write_en = 1'd0
+       mem_1.write_data = reg_p0.out
+    }
+
+    group write_buffer_r2 {
+       mem_2.addr0 = 1'd0
+       mem_2.content_en = 1'd0
+       mem_2.write_en = 1'd0
+       mem_2.write_data = reg_p1.out
+    }
+    
+    group write_buffer_r3 {
+       mem_3.addr0 = 1'd0
+       mem_3.content_en = 1'd0
+       mem_3.write_en = 1'd0
+       mem_3.write_data = reg_p2.out
+    }
+
+    group shift_window_registers {
+       reg_0_0.in = reg_0_1.out
+       reg_0_1.in = reg_0_2.out
+       reg_0_2.in = reg_0_3.out 
+       reg_0_3.in = reg_0_4.out
+       
+       reg_1_0.in = reg_1_1.out
+       reg_1_1.in = reg_1_2.out
+       reg_1_2.in = reg_1_3.out 
+       reg_1_3.in = reg_1_4.out
+
+       reg_2_0.in = reg_2_1.out
+       reg_2_1.in = reg_2_2.out
+       reg_2_2.in = reg_2_3.out 
+       reg_2_3.in = reg_2_4.out
+
+       reg_0_0.in = reg_0_1.out
+       reg_0_1.in = reg_0_2.out
+       reg_0_2.in = reg_0_3.out 
+       reg_0_3.in = reg_0_4.out
+      
+       reg_0_4.in = reg_p3.out
+       reg_1_4.in = reg_p2.out
+       reg_2_4.in = reg_p1.out
+       reg_3_4.in = reg_p0.out
+       reg_4_4.in = pixel_in_c0.out
+    }
+
+    group incr_col_count {
+        adder0.left = reg_col_count.out
+        adder0.right = 1'd0
+        reg_col_count.in = adder0.out
+    }
+
+    group reset_col_count {
+        reg_col_count.in = 0'd0
+    }
   }
 }
 
