@@ -1,158 +1,447 @@
 import "primitives/core.futil";
+import "primitives/memories/seq.futil";
 
-component lineBuffer(pixel_in_c0: 32, @go go: 1) -> (
+component lineBuffer(pixel_in: 32, @go go: 1) -> (
     win_0_0: 32, win_0_1: 32, win_0_2: 32, win_0_3: 32, win_0_4: 32,
     win_1_0: 32, win_1_1: 32, win_1_2: 32, win_1_3: 32, win_1_4: 32,
     win_2_0: 32, win_2_1: 32, win_2_2: 32, win_2_3: 32, win_2_4: 32,
     win_3_0: 32, win_3_1: 32, win_3_2: 32, win_3_3: 32, win_3_4: 32,
     win_4_0: 32, win_4_1: 32, win_4_2: 32, win_4_3: 32, win_4_4: 32,
     @done done: 1) {
-  
+
   cells {
 
+    one = std_const(32, 1);
+    eq  = std_eq(32);
+
     //Store pixels for 4 windows
-    @external mem_0 = seq_mem_d1(32, 60, 1)
-    @external mem_1 = seq_mem_d1(32, 60, 1)
-    @external mem_2 = seq_mem_d1(32, 60, 1)
-    @external mem_3 = seq_mem_d1(32, 60, 1)
- 
+     mem_0 = seq_mem_d1(32, 80, 32);
+     mem_1 = seq_mem_d1(32, 80, 32);
+     mem_2 = seq_mem_d1(32, 80, 32);
+     mem_3 = seq_mem_d1(32, 80, 32);
+
     // Pixels for Sliding window
 
-    reg_0_0 = std_reg(32)
-    reg_0_1 = std_reg(32)
-    reg_0_2 = std_reg(32)
-    reg_0_3 = std_reg(32)
-    reg_0_4 = std_reg(32)
-    reg_1_0 = std_reg(32)
-    reg_1_1 = std_reg(32)
-    reg_1_2 = std_reg(32)
-    reg_1_3 = std_reg(32)
-    reg_1_4 = std_reg(32)
-    reg_2_0 = std_reg(32)
-    reg_2_1 = std_reg(32)
-    reg_2_2 = std_reg(32)
-    reg_2_3 = std_reg(32)
-    reg_2_3 = std_reg(32)
-    reg_3_0 = std_reg(32)
-    reg_3_1 = std_reg(32)
-    reg_3_2 = std_reg(32)
-    reg_3_3 = std_reg(32)
-    reg_3_4 = std_reg(32)
-    reg_4_0 = std_reg(32)
-    reg_4_1 = std_reg(32)
-    reg_4_2 = std_reg(32)
-    reg_4_3 = std_reg(32)
-    reg_4_4 = std_reg(32)
+    reg_0_0 = std_reg(32);
+    reg_0_1 = std_reg(32);
+    reg_0_2 = std_reg(32);
+    reg_0_3 = std_reg(32);
+    reg_0_4 = std_reg(32);
+    reg_1_0 = std_reg(32);
+    reg_1_1 = std_reg(32);
+    reg_1_2 = std_reg(32);
+    reg_1_3 = std_reg(32);
+    reg_1_4 = std_reg(32);
+    reg_2_0 = std_reg(32);
+    reg_2_1 = std_reg(32);
+    reg_2_2 = std_reg(32);
+    reg_2_3 = std_reg(32);
+    reg_2_4 = std_reg(32);
+    reg_3_0 = std_reg(32);
+    reg_3_1 = std_reg(32);
+    reg_3_2 = std_reg(32);
+    reg_3_3 = std_reg(32);
+    reg_3_4 = std_reg(32);
+    reg_4_0 = std_reg(32);
+    reg_4_1 = std_reg(32);
+    reg_4_2 = std_reg(32);
+    reg_4_3 = std_reg(32);
+    reg_4_4 = std_reg(32);
 
-    reg_col_count = std_reg(32)
-    row_col_count = std_reg(32)
+    reg_col_count = std_reg(32);
+    reg_row_count = std_reg(32);
 
-    reg_p0 = std_reg(32)
-    reg_p1 = std_reg(32)
-    reg_p2 = std_reg(32)
-    reg_p3 = std_reg(32)
+    reg_p0 = std_reg(32);
+    reg_p1 = std_reg(32);
+    reg_p2 = std_reg(32);
+    reg_p3 = std_reg(32);
 
-    adder0 = std_add(32)
-    adder1 = std_add(32)
+    adder0 = std_add(32);
+    adder1 = std_add(32);
   }
 
   wires {
+    win_0_0 = reg_0_0.out; win_0_1 = reg_0_1.out; win_0_2 = reg_0_2.out; win_0_3 = reg_0_3.out; win_0_4 = reg_0_4.out;
+    win_1_0 = reg_1_0.out; win_1_1 = reg_1_1.out; win_1_2 = reg_1_2.out; win_1_3 = reg_1_3.out; win_1_4 = reg_1_4.out;
+    win_2_0 = reg_2_0.out; win_2_1 = reg_2_1.out; win_2_2 = reg_2_2.out; win_2_3 = reg_2_3.out; win_2_4 = reg_2_4.out;
+    win_3_0 = reg_3_0.out; win_3_1 = reg_3_1.out; win_3_2 = reg_3_2.out; win_3_3 = reg_3_3.out; win_3_4 = reg_3_4.out;
+    win_4_0 = reg_4_0.out; win_4_1 = reg_4_1.out; win_4_2 = reg_4_2.out; win_4_3 = reg_4_3.out; win_4_4 = reg_4_4.out;
+
     group read_buffer_r0 {
-       mem_0.addr0 = 1'd0 
-       mem_0.content_en = 1'd0
-       mem_0.write_en = 0'd0
-       reg_p0.in = mem_0.read_data
+       mem_0.addr0 = reg_col_count.out;
+       mem_0.content_en = 1'd1;
+       mem_0.write_en = 1'd0;
+       reg_p0.in = mem_0.read_data;
+       reg_p0.write_en = mem_0.done;
+
+       read_buffer_r0[done] = reg_p0.done;
     }
     group read_buffer_r1 {
-       mem_1.addr0 = 1'd0 
-       mem_1.content_en = 1'd0
-       mem_1.write_en = 0'd0
-       reg_p1.in = mem_1.read_data
+       mem_1.addr0 = reg_col_count.out;
+       mem_1.content_en = 1'd1;
+       mem_1.write_en = 1'd0;
+       reg_p1.in = mem_1.read_data;
+       reg_p1.write_en = mem_1.done;
+
+       read_buffer_r1[done] = reg_p1.done;
     }
     group read_buffer_r2 {
-       mem_2.addr0 = 1'd0 
-       mem_2.content_en = 1'd0
-       mem_2.write_en = 0'd0
-       reg_p2.in = mem_2.read_data
+       mem_2.addr0 = reg_col_count.out;
+       mem_2.content_en = 1'd1;
+       mem_2.write_en = 1'd0;
+       reg_p2.in = mem_2.read_data;
+       reg_p2.write_en = mem_2.done;
+
+       read_buffer_r2[done] = reg_p2.done;
     }
     group read_buffer_r3 {
-       mem_3.addr0 = 1'd0 
-       mem_3.content_en = 1'd0
-       mem_3.write_en = 0'd0
-       reg_p3.in = mem_3.read_data
+       mem_3.addr0 = reg_col_count.out;
+       mem_3.content_en = 1'd1;
+       mem_3.write_en = 1'd0;
+       reg_p3.in = mem_3.read_data;
+       reg_p3.write_en = mem_3.done;
+
+       read_buffer_r3[done] = reg_p3.done;
     }
 
     group write_buffer_r0 {
-       mem_0.addr0 = 1'd0
-       mem_0.content_en = 1'd0
-       mem_0.write_en = 1'd0
-       mem_0.write_data = pixel_in_c0.out
+       mem_0.addr0 = reg_col_count.out;
+       mem_0.content_en = 1'd1;
+       mem_0.write_en = 1'd1;
+       mem_0.write_data = pixel_in_c0;
+
+       write_buffer_r0[done] = mem_0.done;
     }
 
     group write_buffer_r1 {
-       mem_1.addr0 = 1'd0
-       mem_1.content_en = 1'd0
-       mem_1.write_en = 1'd0
-       mem_1.write_data = reg_p0.out
+       mem_1.addr0 = reg_col_count.out;
+       mem_1.content_en = 1'd1;
+       mem_1.write_en = 1'd1;
+       mem_1.write_data = reg_p0.out;
+
+       write_buffer_r1[done] = mem_1.done;
     }
 
     group write_buffer_r2 {
-       mem_2.addr0 = 1'd0
-       mem_2.content_en = 1'd0
-       mem_2.write_en = 1'd0
-       mem_2.write_data = reg_p1.out
+       mem_2.addr0 = reg_col_count.out;
+       mem_2.content_en = 1'd1;
+       mem_2.write_en = 1'd1;
+       mem_2.write_data = reg_p1.out;
+       write_buffer_r2[done] = mem_2.done;
     }
-    
+
     group write_buffer_r3 {
-       mem_3.addr0 = 1'd0
-       mem_3.content_en = 1'd0
-       mem_3.write_en = 1'd0
-       mem_3.write_data = reg_p2.out
+       mem_3.addr0 = reg_col_count.out;
+       mem_3.content_en = 1'd1;
+       mem_3.write_en = 1'd1;
+       mem_3.write_data = reg_p2.out;
+
+       write_buffer_r3[done] = mem_3.done;
     }
 
     group shift_window_registers {
-       reg_0_0.in = reg_0_1.out
-       reg_0_1.in = reg_0_2.out
-       reg_0_2.in = reg_0_3.out 
-       reg_0_3.in = reg_0_4.out
-       
-       reg_1_0.in = reg_1_1.out
-       reg_1_1.in = reg_1_2.out
-       reg_1_2.in = reg_1_3.out 
-       reg_1_3.in = reg_1_4.out
+       reg_0_0.write_en = 1'd1;
+       reg_0_0.in = reg_0_1.out;
+       reg_0_1.write_en = 1'd1;
+       reg_0_1.in = reg_0_2.out;
+       reg_0_2.write_en = 1'd1;
+       reg_0_2.in = reg_0_3.out;
+       reg_0_3.write_en = 1'd1;
+       reg_0_3.in = reg_0_4.out;
 
-       reg_2_0.in = reg_2_1.out
-       reg_2_1.in = reg_2_2.out
-       reg_2_2.in = reg_2_3.out 
-       reg_2_3.in = reg_2_4.out
+       reg_1_0.write_en = 1'd1;
+       reg_1_0.in = reg_1_1.out;
+       reg_1_1.write_en = 1'd1;
+       reg_1_1.in = reg_1_2.out;
+       reg_1_2.write_en = 1'd1;
+       reg_1_2.in = reg_1_3.out;
+       reg_1_3.write_en = 1'd1;
+       reg_1_3.in = reg_1_4.out;
 
-       reg_0_0.in = reg_0_1.out
-       reg_0_1.in = reg_0_2.out
-       reg_0_2.in = reg_0_3.out 
-       reg_0_3.in = reg_0_4.out
-      
-       reg_0_4.in = reg_p3.out
-       reg_1_4.in = reg_p2.out
-       reg_2_4.in = reg_p1.out
-       reg_3_4.in = reg_p0.out
-       reg_4_4.in = pixel_in_c0.out
+
+       reg_2_0.write_en = 1'd1;
+       reg_2_0.in = reg_2_1.out;
+       reg_2_1.write_en = 1'd1;
+       reg_2_1.in = reg_2_2.out;
+       reg_2_2.write_en = 1'd1;
+       reg_2_2.in = reg_2_3.out;
+       reg_2_3.write_en = 1'd1;
+       reg_2_3.in = reg_2_4.out;
+
+
+       reg_3_0.write_en = 1'd1;
+       reg_3_0.in = reg_3_1.out;
+       reg_3_1.write_en = 1'd1;
+       reg_3_1.in = reg_3_2.out;
+       reg_3_2.write_en = 1'd1;
+       reg_3_2.in = reg_3_3.out;
+       reg_3_3.write_en = 1'd1;
+       reg_3_3.in = reg_3_4.out;
+
+       reg_4_0.write_en = 1'd1;
+       reg_4_0.in = reg_4_1.out;
+
+       reg_4_1.write_en = 1'd1;
+       reg_4_1.in = reg_4_2.out;
+
+       reg_4_2.write_en = 1'd1;
+       reg_4_2.in = reg_4_3.out;
+
+       reg_4_3.write_en = 1'd1;
+       reg_4_3.in = reg_4_4.out;
+
+       reg_0_4.write_en = 1'd1;
+       reg_0_4.in = reg_p3.out;
+       reg_1_4.write_en = 1'd1;
+       reg_1_4.in = reg_p2.out;
+       reg_2_4.write_en = 1'd1;
+       reg_2_4.in = reg_p1.out;
+       reg_3_4.write_en = 1'd1;
+       reg_3_4.in = reg_p0.out;
+       reg_4_4.write_en = 1'd1;
+       reg_4_4.in = pixel_in_c0;
+
+       shift_window_registers[done] = reg_0_0.done;
     }
 
-    group incr_col_count {
-        adder0.left = reg_col_count.out
-        adder0.right = 1'd0
-        reg_col_count.in = adder0.out
+    group incr_ptrs {
+
+        eq.left = reg_col_count.out;
+        eq.right = 32'd79;
+
+        adder0.left = reg_col_count.out;
+        adder0.right = one.out;
+
+        adder1.left = reg_row_count.out;
+        adder1.right = one.out;
+
+        reg_col_count.write_en = 1'd1;
+
+        reg_col_count.in = eq.out ? 32'd0;
+        reg_col_count.in = !eq.out ? adder0.out;
+
+        reg_row_count.write_en = eq.out ? 1'd1;
+        reg_row_count.in = eq.out ? adder1.out;
+
+        incr_ptrs[done] = reg_col_count.done;
     }
 
-    group reset_col_count {
-        reg_col_count.in = 0'd0
-    }
+  }
+  control{
+      seq{
+        par {
+          read_buffer_r0;
+          read_buffer_r1;
+          read_buffer_r2;
+          read_buffer_r3;
+        }
+
+        par {
+          write_buffer_r0;
+          write_buffer_r1;
+          write_buffer_r2;
+          write_buffer_r3;
+
+          shift_window_registers;
+        }
+
+      incr_ptrs;
+      }
   }
 }
 
-component main(@go go: 1) -> (@done done: 1) {
-  cells {}
-  wires {}
-  control {}
-}
+component conv_engine(
+    // 25 Sliding Window Inputs
+    win_0_0: 32, win_0_1: 32, win_0_2: 32, win_0_3: 32, win_0_4: 32,
+    win_1_0: 32, win_1_1: 32, win_1_2: 32, win_1_3: 32, win_1_4: 32,
+    win_2_0: 32, win_2_1: 32, win_2_2: 32, win_2_3: 32, win_2_4: 32,
+    win_3_0: 32, win_3_1: 32, win_3_2: 32, win_3_3: 32, win_3_4: 32,
+    win_4_0: 32, win_4_1: 32, win_4_2: 32, win_4_3: 32, win_4_4: 32,
 
+    // 25 Kernel Weight Inputs
+    ker_0_0: 32, ker_0_1: 32, ker_0_2: 32, ker_0_3: 32, ker_0_4: 32,
+    ker_1_0: 32, ker_1_1: 32, ker_1_2: 32, ker_1_3: 32, ker_1_4: 32,
+    ker_2_0: 32, ker_2_1: 32, ker_2_2: 32, ker_2_3: 32, ker_2_4: 32,
+    ker_3_0: 32, ker_3_1: 32, ker_3_2: 32, ker_3_3: 32, ker_3_4: 32,
+    ker_4_0: 32, ker_4_1: 32, ker_4_2: 32, ker_4_3: 32, ker_4_4: 32,
+
+    @go go: 1
+) -> (out: 32, @done done: 1) {
+   cells {
+    m_0_0 = std_mult(32); m_0_1 = std_mult(32); m_0_2 = std_mult(32); m_0_3 = std_mult(32); m_0_4 = std_mult(32);
+    m_1_0 = std_mult(32); m_1_1 = std_mult(32); m_1_2 = std_mult(32); m_1_3 = std_mult(32); m_1_4 = std_mult(32);
+    m_2_0 = std_mult(32); m_2_1 = std_mult(32); m_2_2 = std_mult(32); m_2_3 = std_mult(32); m_2_4 = std_mult(32);
+    m_3_0 = std_mult(32); m_3_1 = std_mult(32); m_3_2 = std_mult(32); m_3_3 = std_mult(32); m_3_4 = std_mult(32);
+    m_4_0 = std_mult(32); m_4_1 = std_mult(32); m_4_2 = std_mult(32); m_4_3 = std_mult(32); m_4_4 = std_mult(32);
+
+    a1_0 = std_add(32);  a1_1 = std_add(32);  a1_2 = std_add(32);  a1_3 = std_add(32);
+    a1_4 = std_add(32);  a1_5 = std_add(32);  a1_6 = std_add(32);  a1_7 = std_add(32);
+    a1_8 = std_add(32);  a1_9 = std_add(32);  a1_10 = std_add(32); a1_11 = std_add(32);
+
+    a2_0 = std_add(32); a2_1 = std_add(32); a2_2 = std_add(32);
+    a2_3 = std_add(32); a2_4 = std_add(32); a2_5 = std_add(32);
+
+    a3_0 = std_add(32); a3_1 = std_add(32); a3_2 = std_add(32);
+
+    a4_0 = std_add(32); a4_1 = std_add(32);
+
+    a5_0 = std_add(32);
+
+    res = std_reg(32);
+  }
+  wires {
+    out = res.out;
+
+    group compute_conv {
+      // Step 0: 25 Multiplications in parallel
+      m_0_0.left = win_0_0; m_0_0.right = ker_0_0;
+      m_0_1.left = win_0_1; m_0_1.right = ker_0_1;
+      m_0_2.left = win_0_2; m_0_2.right = ker_0_2;
+      m_0_3.left = win_0_3; m_0_3.right = ker_0_3;
+      m_0_4.left = win_0_4; m_0_4.right = ker_0_4;
+
+      m_1_0.left = win_1_0; m_1_0.right = ker_1_0;
+      m_1_1.left = win_1_1; m_1_1.right = ker_1_1;
+      m_1_2.left = win_1_2; m_1_2.right = ker_1_2;
+      m_1_3.left = win_1_3; m_1_3.right = ker_1_3;
+      m_1_4.left = win_1_4; m_1_4.right = ker_1_4;
+
+      m_2_0.left = win_2_0; m_2_0.right = ker_2_0;
+      m_2_1.left = win_2_1; m_2_1.right = ker_2_1;
+      m_2_2.left = win_2_2; m_2_2.right = ker_2_2;
+      m_2_3.left = win_2_3; m_2_3.right = ker_2_3;
+      m_2_4.left = win_2_4; m_2_4.right = ker_2_4;
+
+      m_3_0.left = win_3_0; m_3_0.right = ker_3_0;
+      m_3_1.left = win_3_1; m_3_1.right = ker_3_1;
+      m_3_2.left = win_3_2; m_3_2.right = ker_3_2;
+      m_3_3.left = win_3_3; m_3_3.right = ker_3_3;
+      m_3_4.left = win_3_4; m_3_4.right = ker_3_4;
+
+      m_4_0.left = win_4_0; m_4_0.right = ker_4_0;
+      m_4_1.left = win_4_1; m_4_1.right = ker_4_1;
+      m_4_2.left = win_4_2; m_4_2.right = ker_4_2;
+      m_4_3.left = win_4_3; m_4_3.right = ker_4_3;
+      m_4_4.left = win_4_4; m_4_4.right = ker_4_4;
+
+      // Level 1: Sum 24 products in pairs (m_4_4 is leftover for now)
+      a1_0.left = m_0_0.out; a1_0.right = m_0_1.out;
+      a1_1.left = m_0_2.out; a1_1.right = m_0_3.out;
+      a1_2.left = m_0_4.out; a1_2.right = m_1_0.out;
+      a1_3.left = m_1_1.out; a1_3.right = m_1_2.out;
+      a1_4.left = m_1_3.out; a1_4.right = m_1_4.out;
+      a1_5.left = m_2_0.out; a1_5.right = m_2_1.out;
+      a1_6.left = m_2_2.out; a1_6.right = m_2_3.out;
+      a1_7.left = m_2_4.out; a1_7.right = m_3_0.out;
+      a1_8.left = m_3_1.out; a1_8.right = m_3_2.out;
+      a1_9.left = m_3_3.out; a1_9.right = m_3_4.out;
+      a1_10.left = m_4_0.out; a1_10.right = m_4_1.out;
+      a1_11.left = m_4_2.out; a1_11.right = m_4_3.out;
+
+      // Level 2: Sum 12 results in pairs
+      a2_0.left = a1_0.out; a2_0.right = a1_1.out;
+      a2_1.left = a1_2.out; a2_1.right = a1_3.out;
+      a2_2.left = a1_4.out; a2_2.right = a1_5.out;
+      a2_3.left = a1_6.out; a2_3.right = a1_7.out;
+      a2_4.left = a1_8.out; a2_4.right = a1_9.out;
+      a2_5.left = a1_10.out; a2_5.right = a1_11.out;
+
+      // Level 3: Sum 6 results in pairs
+      a3_0.left = a2_0.out; a3_0.right = a2_1.out;
+      a3_1.left = a2_2.out; a3_1.right = a2_3.out;
+      a3_2.left = a2_4.out; a3_2.right = a2_5.out;
+
+      // Level 4: Sum a3_0 + a3_1, and a3_2 + leftover m_4_4
+      a4_0.left = a3_0.out; a4_0.right = a3_1.out;
+      a4_1.left = a3_2.out; a4_1.right = m_4_4.out;
+
+      // Level 5: Final addition
+      a5_0.left = a4_0.out; a5_0.right = a4_1.out;
+
+      // Latch final result
+      res.in = a5_0.out;
+      res.write_en = 1'd1;
+
+      compute_conv[done] = res.done;
+    }
+  }
+  control {
+    seq {
+      compute_conv;
+    }
+  }
+}
+component main(@go go: 1) -> (@done done: 1) {
+  cells {
+     one = std_const(32, 1);
+     idx = std_reg(32);
+
+     // 3 channle 80 * 60 image
+     @external(1) img_r = seq_mem_d1(32, 4800, 32);
+     @external(1) img_g = seq_mem_d1(32, 4800, 32);
+     @external(1) img_b = seq_mem_d2(32, 4800, 32);
+
+     adder = std_add(32);
+
+     pixel_reg_r = std_reg(32);
+     pixel_reg_g = std_reg(32);
+     pixel_reg_b = std_reg(32);
+
+     linebuffer_r = lineBuffer();
+     linebuffer_g = lineBuffer();
+     linebuffer_b = lineBuffer();
+  }
+  wires {
+     group read_pixels {
+         img_r.addr0 = idx.out;
+         img_g.addr0 = idx.out;
+         img_b.addr0 = idx.out;
+
+         img_r.content_en = 1'd1;
+         img_r.write_en = 1'd0;
+
+
+         img_g.content_en = 1'd1;
+         img_g.write_en = 1'd0;
+
+         img_b.content_en = 1'd1;
+         img_b.write_en = 1'd0;
+
+         pixel_reg_r.write_en = img_r.done;
+         pixel_reg_r.in = img_r.read_data;
+
+         pixel_reg_g.write_en = img_g.done;
+         pixel_reg_g.in = img_g.read_data
+
+         pixel_reg_b.write_en = img_b.done;
+         pixel_reg_b.in = img_b.read_data
+
+         read_pixel[done] = pixel_reg.done;
+     }
+
+     group incr_idx{
+        adder.left = idx.out;
+        adder.right = one.out;
+
+        idx.write_en = 1'd1;
+        idx.in = adder.out;
+
+        incr_idx[done] = idx.done;
+     }
+  }
+  control {
+     seq{
+        repeat 4800 {
+          seq {
+            read_pixels;
+            par {
+              invoke linebuffer_r(pixel_in = pixel_reg_r.out)();
+              invoke linebuffer_g(pixel_in = pixel_reg_g.out)();
+              invoke linebuffer.b(pixel_in = pixel_reg_b.out)();
+            }
+            incr_idx;
+          }
+        }
+     }
+  }
+}

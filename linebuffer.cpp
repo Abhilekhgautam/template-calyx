@@ -86,14 +86,17 @@ public:
 
     bool isValid = (row_count >= 4) && (col_count >= 4);
 
-    col_count = (col_count + 1) % 80;
+    col_count = col_count + 1;
 
-    if (col_count == 0) {
+    if (col_count == 79) {
+      col_count = 0;
       row_count = row_count + 1;
     }
 
     return isValid;
   }
+
+  std::array<std::array<int, 5>, 5> get_current_window() { return win_reg; }
 
   void print_reg_win() {
     std::cout << "[" << win_reg[0][0] << " " << win_reg[0][1] << " "
@@ -117,6 +120,10 @@ public:
 int main() {
   BetterBuffer lb;
   std::array<int, 4800> img;
+  std::array<std::array<int, 5>, 5> kernel = {
+      45, 67, 12, 34, 10, 3,  4,   1,   34, 56, 98,  234, 22,
+      98, 45, 34, 23, 78, 90, 100, 106, 45, 87, 230, 222};
+
   for (int i = 0; i < 4800; i++) {
     img[i] = i;
   }
@@ -124,7 +131,16 @@ int main() {
   for (const int px : img) {
     auto val = lb.step(px);
     if (val) {
-      lb.print_reg_win();
+      auto window = lb.get_current_window();
+
+      int sum{0};
+      // For hardware this has to be in parallel
+      for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+          sum += window[i][j] * kernel[i][j];
+        }
+      }
+
       count++;
     }
 
