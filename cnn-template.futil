@@ -251,23 +251,36 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
 }
 
 component conv_engine(
-    // 25 Sliding Window Inputs
-    win_0_0: 32, win_0_1: 32, win_0_2: 32, win_0_3: 32, win_0_4: 32,
-    win_1_0: 32, win_1_1: 32, win_1_2: 32, win_1_3: 32, win_1_4: 32,
-    win_2_0: 32, win_2_1: 32, win_2_2: 32, win_2_3: 32, win_2_4: 32,
-    win_3_0: 32, win_3_1: 32, win_3_2: 32, win_3_3: 32, win_3_4: 32,
-    win_4_0: 32, win_4_1: 32, win_4_2: 32, win_4_3: 32, win_4_4: 32,
-
+    win_row0: 160, win_row1: 160, win_row2: 160, win_row3: 160, win_row4: 160,
     // 25 Kernel Weight Inputs
-    ker_0_0: 32, ker_0_1: 32, ker_0_2: 32, ker_0_3: 32, ker_0_4: 32,
-    ker_1_0: 32, ker_1_1: 32, ker_1_2: 32, ker_1_3: 32, ker_1_4: 32,
-    ker_2_0: 32, ker_2_1: 32, ker_2_2: 32, ker_2_3: 32, ker_2_4: 32,
-    ker_3_0: 32, ker_3_1: 32, ker_3_2: 32, ker_3_3: 32, ker_3_4: 32,
-    ker_4_0: 32, ker_4_1: 32, ker_4_2: 32, ker_4_3: 32, ker_4_4: 32,
-
+    ker_row0: 160, ker_row1: 160, ker_row2: 160, ker_row3: 160, ker_row4: 160,
     @go go: 1
 ) -> (out: 32, @done done: 1) {
    cells {
+
+    slice_0_31_row0 = std_bit_slice(160, 0, 31, 32);
+    slice_32_63_row1 = std_bit_slice(160, 32, 63, 32);
+    slice_64_95_row2 = std_bit_slice(160, 64, 95, 32);
+    slice_96_127_row3 = std_slice(160, 96, 127, 32);
+    slice_128_159_row4 = std_slice(160, 128, 159, 32);
+
+    slice_ker_row0 = std_slice(160, 32);
+    slice_ker_row1 = std_slice(160, 32);
+    slice_ker_row2 = std_slice(160, 32);
+    sliece_ker_row3 = std_slice(160, 32);
+
+    win_0_0 = std_reg(32), win_0_1 = std_reg(32), win_0_2 = std_reg(32), win_0_3 = std_reg(32), win_0_4 = std_reg(32),
+    win_1_0 = std_reg(32), win_1_1 = std_reg(32), win_1_2 = std_reg(32), win_1_3 = std_reg(32), win_1_4 = std_reg(32),
+    win_2_0 = std_reg(32), win_2_1 = std_reg(32), win_2_2 = std_reg(32), win_2_3 = std_reg(32), win_2_4 = std_reg(32),
+    win_3_0 = std_reg(32), win_3_1 = std_reg(32), win_3_2 = std_reg(32), win_3_3 = std_reg(32), win_3_4 = std_reg(32),
+    win_4_0 = std_reg(32), win_4_1 = std_reg(32), win_4_2 = std_reg(32), win_4_3 = std_reg(32), win_4_4 = std_reg(32),
+
+    ker_0_0 = std_reg(32), ker_0_1 = std_reg(32), ker_0_2 = std_reg(32), ker_0_3 = std_reg(32), ker_0_4 = std_reg(32),
+    ker_1_0 = std_reg(32), ker_1_1 = std_reg(32), ker_1_2 = std_reg(32), ker_1_3 = std_reg(32), ker_1_4 = std_reg(32),
+    ker_2_0 = std_reg(32), ker_2_1 = std_reg(32), ker_2_2 = std_reg(32), ker_2_3 = std_reg(32), ker_2_4 = std_reg(32),
+    ker_3_0 = std_reg(32), ker_3_1 = std_reg(32), ker_3_2 = std_reg(32), ker_3_3 = std_reg(32), ker_3_4 = std_reg(32),
+    ker_4_0 = std_reg(32), ker_4_1 = std_reg(32), ker_4_2 = std_reg(32), ker_4_3 = std_reg(32), ker_4_4 = std_reg(32),
+
     m_0_0 = std_mult(32); m_0_1 = std_mult(32); m_0_2 = std_mult(32); m_0_3 = std_mult(32); m_0_4 = std_mult(32);
     m_1_0 = std_mult(32); m_1_1 = std_mult(32); m_1_2 = std_mult(32); m_1_3 = std_mult(32); m_1_4 = std_mult(32);
     m_2_0 = std_mult(32); m_2_1 = std_mult(32); m_2_2 = std_mult(32); m_2_3 = std_mult(32); m_2_4 = std_mult(32);
@@ -438,6 +451,10 @@ component main(@go go: 1) -> (@done done: 1) {
               invoke linebuffer_r(pixel_in = pixel_reg_r.out)();
               invoke linebuffer_g(pixel_in = pixel_reg_g.out)();
               invoke linebuffer.b(pixel_in = pixel_reg_b.out)();
+            }
+            par {
+             invoke conv_engine()
+
             }
             incr_idx;
           }
