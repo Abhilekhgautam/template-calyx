@@ -252,14 +252,12 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
 }
 
 component conv_engine(
-    // 25 Sliding Window Inputs (separated by commas)
     win_0_0: 32, win_0_1: 32, win_0_2: 32, win_0_3: 32, win_0_4: 32,
     win_1_0: 32, win_1_1: 32, win_1_2: 32, win_1_3: 32, win_1_4: 32,
     win_2_0: 32, win_2_1: 32, win_2_2: 32, win_2_3: 32, win_2_4: 32,
     win_3_0: 32, win_3_1: 32, win_3_2: 32, win_3_3: 32, win_3_4: 32,
     win_4_0: 32, win_4_1: 32, win_4_2: 32, win_4_3: 32, win_4_4: 32,
 
-    // 25 Weight Inputs (FIXED: commas instead of semicolons)
     ker_0_0: 32, ker_0_1: 32, ker_0_2: 32, ker_0_3: 32, ker_0_4: 32,
     ker_1_0: 32, ker_1_1: 32, ker_1_2: 32, ker_1_3: 32, ker_1_4: 32,
     ker_2_0: 32, ker_2_1: 32, ker_2_2: 32, ker_2_3: 32, ker_2_4: 32,
@@ -708,7 +706,7 @@ component main(@go go: 1) -> (@done done: 1) {
   control {
      seq {
          reset_filter_ptr;
-         repeat 8 {
+         repeat 1 {
         seq {
            invoke cache[filter = weights](ptr = filter_ptr.out)();
 
