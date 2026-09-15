@@ -706,7 +706,7 @@ component main(@go go: 1) -> (@done done: 1) {
   control {
      seq {
          reset_filter_ptr;
-         repeat 1 {
+         repeat 8 {
         seq {
            invoke cache[filter = weights](ptr = filter_ptr.out)();
 
