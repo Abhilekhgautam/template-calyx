@@ -300,83 +300,82 @@ component conv_engine(
     }
 	wires {
     	out = res.out;
+      group conv_multiply {
+			    // 25 Multiplications in parallel
+			    m_0_0.left = win_0_0; m_0_0.right = ker_0_0; m_0_0.go = 1'd1;
+			    m_0_1.left = win_0_1; m_0_1.right = ker_0_1; m_0_1.go = 1'd1;
+			    m_0_2.left = win_0_2; m_0_2.right = ker_0_2; m_0_2.go = 1'd1;
+			    m_0_3.left = win_0_3; m_0_3.right = ker_0_3; m_0_3.go = 1'd1;
+			    m_0_4.left = win_0_4; m_0_4.right = ker_0_4; m_0_4.go = 1'd1;
 
-     group compute_conv {
-      // Step 0: 25 Multiplications in parallel
-      m_0_0.left = win_0_0; m_0_0.right = ker_0_0;
-      m_0_1.left = win_0_1; m_0_1.right = ker_0_1;
-      m_0_2.left = win_0_2; m_0_2.right = ker_0_2;
-      m_0_3.left = win_0_3; m_0_3.right = ker_0_3;
-      m_0_4.left = win_0_4; m_0_4.right = ker_0_4;
+			    m_1_0.left = win_1_0; m_1_0.right = ker_1_0; m_1_0.go = 1'd1;
+			    m_1_1.left = win_1_1; m_1_1.right = ker_1_1; m_1_1.go = 1'd1;
+			    m_1_2.left = win_1_2; m_1_2.right = ker_1_2; m_1_2.go = 1'd1;
+			    m_1_3.left = win_1_3; m_1_3.right = ker_1_3; m_1_3.go = 1'd1;
+			    m_1_4.left = win_1_4; m_1_4.right = ker_1_4; m_1_4.go = 1'd1;
 
-      m_1_0.left = win_1_0; m_1_0.right = ker_1_0;
-      m_1_1.left = win_1_1; m_1_1.right = ker_1_1;
-      m_1_2.left = win_1_2; m_1_2.right = ker_1_2;
-      m_1_3.left = win_1_3; m_1_3.right = ker_1_3;
-      m_1_4.left = win_1_4; m_1_4.right = ker_1_4;
+			    m_2_0.left = win_2_0; m_2_0.right = ker_2_0; m_2_0.go = 1'd1;
+			    m_2_1.left = win_2_1; m_2_1.right = ker_2_1; m_2_1.go = 1'd1;
+			    m_2_2.left = win_2_2; m_2_2.right = ker_2_2; m_2_2.go = 1'd1;
+			    m_2_3.left = win_2_3; m_2_3.right = ker_2_3; m_2_3.go = 1'd1'
+			    m_2_4.left = win_2_4; m_2_4.right = ker_2_4; m_2_4.go = 1'd1;
 
-      m_2_0.left = win_2_0; m_2_0.right = ker_2_0;
-      m_2_1.left = win_2_1; m_2_1.right = ker_2_1;
-      m_2_2.left = win_2_2; m_2_2.right = ker_2_2;
-      m_2_3.left = win_2_3; m_2_3.right = ker_2_3;
-      m_2_4.left = win_2_4; m_2_4.right = ker_2_4;
+			    m_3_0.left = win_3_0; m_3_0.right = ker_3_0; m_3_0.go = 1'd1;
+			    m_3_1.left = win_3_1; m_3_1.right = ker_3_1; m_3_1.go = 1'd1;
+			    m_3_2.left = win_3_2; m_3_2.right = ker_3_2; m_3_2.go = 1'd1;
+			    m_3_3.left = win_3_3; m_3_3.right = ker_3_3; m_3_3.go = 1'd1;
+			    m_3_4.left = win_3_4; m_3_4.right = ker_3_4; m_3_4.go = 1'd1;
 
-      m_3_0.left = win_3_0; m_3_0.right = ker_3_0;
-      m_3_1.left = win_3_1; m_3_1.right = ker_3_1;
-      m_3_2.left = win_3_2; m_3_2.right = ker_3_2;
-      m_3_3.left = win_3_3; m_3_3.right = ker_3_3;
-      m_3_4.left = win_3_4; m_3_4.right = ker_3_4;
+			    m_4_0.left = win_4_0; m_4_0.right = ker_4_0; m_4_0.go = 1'd1;
+			    m_4_1.left = win_4_1; m_4_1.right = ker_4_1; m_4_1.go = 1'd1;
+			    m_4_2.left = win_4_2; m_4_2.right = ker_4_2; m_4_2.go = 1'd1;
+			    m_4_3.left = win_4_3; m_4_3.right = ker_4_3; m_4_3.go = 1'd1;
+			    m_4_4.left = win_4_4; m_4_4.right = ker_4_4; m_4_4.go = 1'd1;
 
-      m_4_0.left = win_4_0; m_4_0.right = ker_4_0;
-      m_4_1.left = win_4_1; m_4_1.right = ker_4_1;
-      m_4_2.left = win_4_2; m_4_2.right = ker_4_2;
-      m_4_3.left = win_4_3; m_4_3.right = ker_4_3;
-      m_4_4.left = win_4_4; m_4_4.right = ker_4_4;
+			    compute_multiply[done] = m_0_0.done;
+		  }
 
-      // Level 1: Sum 24 products in pairs (m_4_4 is leftover for now)
-      a1_0.left = m_0_0.out; a1_0.right = m_0_1.out;
-      a1_1.left = m_0_2.out; a1_1.right = m_0_3.out;
-      a1_2.left = m_0_4.out; a1_2.right = m_1_0.out;
-      a1_3.left = m_1_1.out; a1_3.right = m_1_2.out;
-      a1_4.left = m_1_3.out; a1_4.right = m_1_4.out;
-      a1_5.left = m_2_0.out; a1_5.right = m_2_1.out;
-      a1_6.left = m_2_2.out; a1_6.right = m_2_3.out;
-      a1_7.left = m_2_4.out; a1_7.right = m_3_0.out;
-      a1_8.left = m_3_1.out; a1_8.right = m_3_2.out;
-      a1_9.left = m_3_3.out; a1_9.right = m_3_4.out;
-      a1_10.left = m_4_0.out; a1_10.right = m_4_1.out;
-      a1_11.left = m_4_2.out; a1_11.right = m_4_3.out;
+      group conv_addition {
+		      a1_0.left = m_0_0.out; a1_0.right = m_0_1.out;
+		      a1_1.left = m_0_2.out; a1_1.right = m_0_3.out;
+		      a1_2.left = m_0_4.out; a1_2.right = m_1_0.out;
+		      a1_3.left = m_1_1.out; a1_3.right = m_1_2.out;
+		      a1_4.left = m_1_3.out; a1_4.right = m_1_4.out;
+		      a1_5.left = m_2_0.out; a1_5.right = m_2_1.out;
+		      a1_6.left = m_2_2.out; a1_6.right = m_2_3.out;
+		      a1_7.left = m_2_4.out; a1_7.right = m_3_0.out;
+		      a1_8.left = m_3_1.out; a1_8.right = m_3_2.out;
+		      a1_9.left = m_3_3.out; a1_9.right = m_3_4.out;
+		      a1_10.left = m_4_0.out; a1_10.right = m_4_1.out;
+		      a1_11.left = m_4_2.out; a1_11.right = m_4_3.out;
 
-      // Level 2: Sum 12 results in pairs
-      a2_0.left = a1_0.out; a2_0.right = a1_1.out;
-      a2_1.left = a1_2.out; a2_1.right = a1_3.out;
-      a2_2.left = a1_4.out; a2_2.right = a1_5.out;
-      a2_3.left = a1_6.out; a2_3.right = a1_7.out;
-      a2_4.left = a1_8.out; a2_4.right = a1_9.out;
-      a2_5.left = a1_10.out; a2_5.right = a1_11.out;
+		      a2_0.left = a1_0.out; a2_0.right = a1_1.out;
+		      a2_1.left = a1_2.out; a2_1.right = a1_3.out;
+		      a2_2.left = a1_4.out; a2_2.right = a1_5.out;
+		      a2_3.left = a1_6.out; a2_3.right = a1_7.out;
+		      a2_4.left = a1_8.out; a2_4.right = a1_9.out;
+		      a2_5.left = a1_10.out; a2_5.right = a1_11.out;
 
-      // Level 3: Sum 6 results in pairs
-      a3_0.left = a2_0.out; a3_0.right = a2_1.out;
-      a3_1.left = a2_2.out; a3_1.right = a2_3.out;
-      a3_2.left = a2_4.out; a3_2.right = a2_5.out;
+		      a3_0.left = a2_0.out; a3_0.right = a2_1.out;
+		      a3_1.left = a2_2.out; a3_1.right = a2_3.out;
+		      a3_2.left = a2_4.out; a3_2.right = a2_5.out;
 
-      // Level 4: Sum a3_0 + a3_1, and a3_2 + leftover m_4_4
-      a4_0.left = a3_0.out; a4_0.right = a3_1.out;
-      a4_1.left = a3_2.out; a4_1.right = m_4_4.out;
+		      a4_0.left = a3_0.out; a4_0.right = a3_1.out;
+		      a4_1.left = a3_2.out; a4_1.right = m_4_4.out;
 
-      // Level 5: Final addition
-      a5_0.left = a4_0.out; a5_0.right = a4_1.out;
+		      a5_0.left = a4_0.out; a5_0.right = a4_1.out;
 
-      // Latch final result
-      res.in = a5_0.out;
-      res.write_en = 1'd1;
+		      res.in = a5_0.out;
+		      res.write_en = 1'd1;
 
-      compute_conv[done] = res.done;
+          perform_addition[done] = res.done;
     }
-	}
+
+  }
 	control {
 	  seq {
-	    compute_conv;
+	    conv_multiply;
+      conv_addition;
 	  }
 	}
 }
