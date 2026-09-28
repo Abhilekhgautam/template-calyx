@@ -3,6 +3,7 @@ import "primitives/binary_operators.futil";
 import "primitives/memories/seq.futil";
 
 component lineBuffer(pixel_in: 32, @go go: 1) -> (
+    out: 1,
     win_0_0: 32, win_0_1: 32, win_0_2: 32, win_0_3: 32, win_0_4: 32,
     win_1_0: 32, win_1_1: 32, win_1_2: 32, win_1_3: 32, win_1_4: 32,
     win_2_0: 32, win_2_1: 32, win_2_2: 32, win_2_3: 32, win_2_4: 32,
@@ -16,10 +17,10 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
     eq  = std_eq(32);
 
     //Store pixels for 4 windows
-     mem_0 = seq_mem_d1(32, 80, 32);
-     mem_1 = seq_mem_d1(32, 80, 32);
-     mem_2 = seq_mem_d1(32, 80, 32);
-     mem_3 = seq_mem_d1(32, 80, 32);
+     mem_0 = seq_mem_d1(32, 60, 32);
+     mem_1 = seq_mem_d1(32, 60, 32);
+     mem_2 = seq_mem_d1(32, 60, 32);
+     mem_3 = seq_mem_d1(32, 60, 32);
 
     // Pixels for Sliding window
 
@@ -59,9 +60,17 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
 
     adder0 = std_add(32);
     adder1 = std_add(32);
+
+    valid = std_reg(1);
+
+    slt0 = std_slt(32);
+    slt1 = std_slt(32);
+
+    and0 = std_and(1);
   }
 
   wires {
+    out = valid.out;
     win_0_0 = reg_0_0.out; win_0_1 = reg_0_1.out; win_0_2 = reg_0_2.out; win_0_3 = reg_0_3.out; win_0_4 = reg_0_4.out;
     win_1_0 = reg_1_0.out; win_1_1 = reg_1_1.out; win_1_2 = reg_1_2.out; win_1_3 = reg_1_3.out; win_1_4 = reg_1_4.out;
     win_2_0 = reg_2_0.out; win_2_1 = reg_2_1.out; win_2_2 = reg_2_2.out; win_2_3 = reg_2_3.out; win_2_4 = reg_2_4.out;
@@ -208,7 +217,7 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
     group incr_ptrs {
 
         eq.left = reg_col_count.out;
-        eq.right = 32'd79;
+        eq.right = 32'd59;
 
         adder0.left = reg_col_count.out;
         adder0.right = one.out;
@@ -225,6 +234,20 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
         reg_row_count.in = eq.out ? adder1.out;
 
         incr_ptrs[done] = reg_col_count.done;
+    }
+    // Update the valid bit
+    group set_status {
+        valid.write_en = 1'd1;
+        slt0.left = reg_col_count.out;
+        slt0.right = 32'd56;
+
+        slt1.left = reg_row_count.out;
+        slt1.right = 32'd76;
+
+        valid.in = slt0.out & slt1.out ? 1'd1;
+        valid.in = !(slt0.out & slt1.out) ? 1'd0;
+
+        set_status[done] = valid.done;
     }
 
   }
@@ -247,177 +270,291 @@ component lineBuffer(pixel_in: 32, @go go: 1) -> (
         }
 
       incr_ptrs;
+      set_status;
       }
   }
 }
 
 component conv_engine(
-    win_0_0: 32, win_0_1: 32, win_0_2: 32, win_0_3: 32, win_0_4: 32,
-    win_1_0: 32, win_1_1: 32, win_1_2: 32, win_1_3: 32, win_1_4: 32,
-    win_2_0: 32, win_2_1: 32, win_2_2: 32, win_2_3: 32, win_2_4: 32,
-    win_3_0: 32, win_3_1: 32, win_3_2: 32, win_3_3: 32, win_3_4: 32,
-    win_4_0: 32, win_4_1: 32, win_4_2: 32, win_4_3: 32, win_4_4: 32,
+    win_r_0_0: 32, win_r_0_1: 32, win_r_0_2: 32, win_r_0_3: 32, win_r_0_4: 32,
+    win_r_1_0: 32, win_r_1_1: 32, win_r_1_2: 32, win_r_1_3: 32, win_r_1_4: 32,
+    win_r_2_0: 32, win_r_2_1: 32, win_r_2_2: 32, win_r_2_3: 32, win_r_2_4: 32,
+    win_r_3_0: 32, win_r_3_1: 32, win_r_3_2: 32, win_r_3_3: 32, win_r_3_4: 32,
+    win_r_4_0: 32, win_r_4_1: 32, win_r_4_2: 32, win_r_4_3: 32, win_r_4_4: 32,
 
-    ker_0_0: 32, ker_0_1: 32, ker_0_2: 32, ker_0_3: 32, ker_0_4: 32,
-    ker_1_0: 32, ker_1_1: 32, ker_1_2: 32, ker_1_3: 32, ker_1_4: 32,
-    ker_2_0: 32, ker_2_1: 32, ker_2_2: 32, ker_2_3: 32, ker_2_4: 32,
-    ker_3_0: 32, ker_3_1: 32, ker_3_2: 32, ker_3_3: 32, ker_3_4: 32,
-    ker_4_0: 32, ker_4_1: 32, ker_4_2: 32, ker_4_3: 32, ker_4_4: 32,
+    win_g_0_0: 32, win_g_0_1: 32, win_g_0_2: 32, win_g_0_3: 32, win_g_0_4: 32,
+    win_g_1_0: 32, win_g_1_1: 32, win_g_1_2: 32, win_g_1_3: 32, win_g_1_4: 32,
+    win_g_2_0: 32, win_g_2_1: 32, win_g_2_2: 32, win_g_2_3: 32, win_g_2_4: 32,
+    win_g_3_0: 32, win_g_3_1: 32, win_g_3_2: 32, win_g_3_3: 32, win_g_3_4: 32,
+    win_g_4_0: 32, win_g_4_1: 32, win_g_4_2: 32, win_g_4_3: 32, win_g_4_4: 32,
+
+    win_b_0_0: 32, win_b_0_1: 32, win_b_0_2: 32, win_b_0_3: 32, win_b_0_4: 32,
+    win_b_1_0: 32, win_b_1_1: 32, win_b_1_2: 32, win_b_1_3: 32, win_b_1_4: 32,
+    win_b_2_0: 32, win_b_2_1: 32, win_b_2_2: 32, win_b_2_3: 32, win_b_2_4: 32,
+    win_b_3_0: 32, win_b_3_1: 32, win_b_3_2: 32, win_b_3_3: 32, win_b_3_4: 32,
+    win_b_4_0: 32, win_b_4_1: 32, win_b_4_2: 32, win_b_4_3: 32, win_b_4_4: 32,
+
+    ker_r_0_0: 32, ker_r_0_1: 32, ker_r_0_2: 32, ker_r_0_3: 32, ker_r_0_4: 32,
+    ker_r_1_0: 32, ker_r_1_1: 32, ker_r_1_2: 32, ker_r_1_3: 32, ker_r_1_4: 32,
+    ker_r_2_0: 32, ker_r_2_1: 32, ker_r_2_2: 32, ker_r_2_3: 32, ker_r_2_4: 32,
+    ker_r_3_0: 32, ker_r_3_1: 32, ker_r_3_2: 32, ker_r_3_3: 32, ker_r_3_4: 32,
+    ker_r_4_0: 32, ker_r_4_1: 32, ker_r_4_2: 32, ker_r_4_3: 32, ker_r_4_4: 32,
+
+    ker_g_0_0: 32, ker_g_0_1: 32, ker_g_0_2: 32, ker_g_0_3: 32, ker_g_0_4: 32,
+    ker_g_1_0: 32, ker_g_1_1: 32, ker_g_1_2: 32, ker_g_1_3: 32, ker_g_1_4: 32,
+    ker_g_2_0: 32, ker_g_2_1: 32, ker_g_2_2: 32, ker_g_2_3: 32, ker_g_2_4: 32,
+    ker_g_3_0: 32, ker_g_3_1: 32, ker_g_3_2: 32, ker_g_3_3: 32, ker_g_3_4: 32,
+    ker_g_4_0: 32, ker_g_4_1: 32, ker_g_4_2: 32, ker_g_4_3: 32, ker_g_4_4: 32,
+
+    ker_b_0_0: 32, ker_b_0_1: 32, ker_b_0_2: 32, ker_b_0_3: 32, ker_b_0_4: 32,
+    ker_b_1_0: 32, ker_b_1_1: 32, ker_b_1_2: 32, ker_b_1_3: 32, ker_b_1_4: 32,
+    ker_b_2_0: 32, ker_b_2_1: 32, ker_b_2_2: 32, ker_b_2_3: 32, ker_b_2_4: 32,
+    ker_b_3_0: 32, ker_b_3_1: 32, ker_b_3_2: 32, ker_b_3_3: 32, ker_b_3_4: 32,
+    ker_b_4_0: 32, ker_b_4_1: 32, ker_b_4_2: 32, ker_b_4_3: 32, ker_b_4_4: 32,
 
     @go go: 1) -> (out: 32, @done done: 1) {
 
-   cells {
+  cells {
+    m_0 = std_mult_pipe(32); m_1 = std_mult_pipe(32); m_2 = std_mult_pipe(32); m_3 = std_mult_pipe(32); m_4 = std_mult_pipe(32);
+    m_5 = std_mult_pipe(32); m_6 = std_mult_pipe(32); m_7 = std_mult_pipe(32); m_8 = std_mult_pipe(32); m_9 = std_mult_pipe(32);
+    m_10 = std_mult_pipe(32); m_11 = std_mult_pipe(32); m_12 = std_mult_pipe(32); m_13 = std_mult_pipe(32); m_14 = std_mult_pipe(32);
+    m_15 = std_mult_pipe(32); m_16 = std_mult_pipe(32); m_17 = std_mult_pipe(32); m_18 = std_mult_pipe(32); m_19 = std_mult_pipe(32);
+    m_20 = std_mult_pipe(32); m_21 = std_mult_pipe(32); m_22 = std_mult_pipe(32); m_23 = std_mult_pipe(32); m_24 = std_mult_pipe(32);
+    m_25 = std_mult_pipe(32); m_26 = std_mult_pipe(32); m_27 = std_mult_pipe(32); m_28 = std_mult_pipe(32); m_29 = std_mult_pipe(32);
+    m_30 = std_mult_pipe(32); m_31 = std_mult_pipe(32); m_32 = std_mult_pipe(32); m_33 = std_mult_pipe(32); m_34 = std_mult_pipe(32);
+    m_35 = std_mult_pipe(32); m_36 = std_mult_pipe(32); m_37 = std_mult_pipe(32); m_38 = std_mult_pipe(32); m_39 = std_mult_pipe(32);
+    m_40 = std_mult_pipe(32); m_41 = std_mult_pipe(32); m_42 = std_mult_pipe(32); m_43 = std_mult_pipe(32); m_44 = std_mult_pipe(32);
+    m_45 = std_mult_pipe(32); m_46 = std_mult_pipe(32); m_47 = std_mult_pipe(32); m_48 = std_mult_pipe(32); m_49 = std_mult_pipe(32);
+    m_50 = std_mult_pipe(32); m_51 = std_mult_pipe(32); m_52 = std_mult_pipe(32); m_53 = std_mult_pipe(32); m_54 = std_mult_pipe(32);
+    m_55 = std_mult_pipe(32); m_56 = std_mult_pipe(32); m_57 = std_mult_pipe(32); m_58 = std_mult_pipe(32); m_59 = std_mult_pipe(32);
+    m_60 = std_mult_pipe(32); m_61 = std_mult_pipe(32); m_62 = std_mult_pipe(32); m_63 = std_mult_pipe(32); m_64 = std_mult_pipe(32);
+    m_65 = std_mult_pipe(32); m_66 = std_mult_pipe(32); m_67 = std_mult_pipe(32); m_68 = std_mult_pipe(32); m_69 = std_mult_pipe(32);
+    m_70 = std_mult_pipe(32); m_71 = std_mult_pipe(32); m_72 = std_mult_pipe(32); m_73 = std_mult_pipe(32); m_74 = std_mult_pipe(32);
 
-	    w_adder = std_add(32);
+    add_0_0 = std_add(32); add_0_1 = std_add(32); add_0_2 = std_add(32); add_0_3 = std_add(32); add_0_4 = std_add(32);
+    add_0_5 = std_add(32); add_0_6 = std_add(32); add_0_7 = std_add(32); add_0_8 = std_add(32); add_0_9 = std_add(32);
+    add_0_10 = std_add(32); add_0_11 = std_add(32); add_0_12 = std_add(32); add_0_13 = std_add(32); add_0_14 = std_add(32);
+    add_0_15 = std_add(32); add_0_16 = std_add(32); add_0_17 = std_add(32); add_0_18 = std_add(32); add_0_19 = std_add(32);
+    add_0_20 = std_add(32); add_0_21 = std_add(32); add_0_22 = std_add(32); add_0_23 = std_add(32); add_0_24 = std_add(32);
+    add_0_25 = std_add(32); add_0_26 = std_add(32); add_0_27 = std_add(32); add_0_28 = std_add(32); add_0_29 = std_add(32);
+    add_0_30 = std_add(32); add_0_31 = std_add(32); add_0_32 = std_add(32); add_0_33 = std_add(32); add_0_34 = std_add(32);
+    add_0_35 = std_add(32); add_0_36 = std_add(32);
 
-	    // register to store 25 kernel weights
-	    //ker_0_0 = std_reg(32); ker_0_1 = std_reg(32); ker_0_2 = std_reg(32); ker_0_3 = std_reg(32); ker_0_4 = std_reg(32);
-	    //ker_1_0 = std_reg(32); ker_1_1 = std_reg(32); ker_1_2 = std_reg(32); ker_1_3 = std_reg(32); ker_1_4 = std_reg(32);
-	    //ker_2_0 = std_reg(32); ker_2_1 = std_reg(32); ker_2_2 = std_reg(32); ker_2_3 = std_reg(32); ker_2_4 = std_reg(32);
-	    //ker_3_0 = std_reg(32); ker_3_1 = std_reg(32); ker_3_2 = std_reg(32); ker_3_3 = std_reg(32); ker_3_4 = std_reg(32);
-	    //ker_4_0 = std_reg(32); ker_4_1 = std_reg(32); ker_4_2 = std_reg(32); ker_4_3 = std_reg(32); ker_4_4 = std_reg(32);
+    add_1_0 = std_add(32); add_1_1 = std_add(32); add_1_2 = std_add(32); add_1_3 = std_add(32); add_1_4 = std_add(32);
+    add_1_5 = std_add(32); add_1_6 = std_add(32); add_1_7 = std_add(32); add_1_8 = std_add(32); add_1_9 = std_add(32);
+    add_1_10 = std_add(32); add_1_11 = std_add(32); add_1_12 = std_add(32); add_1_13 = std_add(32); add_1_14 = std_add(32);
+    add_1_15 = std_add(32); add_1_16 = std_add(32); add_1_17 = std_add(32); add_1_18 = std_add(32);
 
-	    m_0_0 = std_mult_pipe(32); m_0_1 = std_mult_pipe(32); m_0_2 = std_mult_pipe(32); m_0_3 = std_mult_pipe(32); m_0_4 = std_mult_pipe(32);
-	    m_1_0 = std_mult_pipe(32); m_1_1 = std_mult_pipe(32); m_1_2 = std_mult_pipe(32); m_1_3 = std_mult_pipe(32); m_1_4 = std_mult_pipe(32);
-	    m_2_0 = std_mult_pipe(32); m_2_1 = std_mult_pipe(32); m_2_2 = std_mult_pipe(32); m_2_3 = std_mult_pipe(32); m_2_4 = std_mult_pipe(32);
-	    m_3_0 = std_mult_pipe(32); m_3_1 = std_mult_pipe(32); m_3_2 = std_mult_pipe(32); m_3_3 = std_mult_pipe(32); m_3_4 = std_mult_pipe(32);
-	    m_4_0 = std_mult_pipe(32); m_4_1 = std_mult_pipe(32); m_4_2 = std_mult_pipe(32); m_4_3 = std_mult_pipe(32); m_4_4 = std_mult_pipe(32);
+    add_2_0 = std_add(32); add_2_1 = std_add(32); add_2_2 = std_add(32); add_2_3 = std_add(32); add_2_4 = std_add(32);
+    add_2_5 = std_add(32); add_2_6 = std_add(32); add_2_7 = std_add(32); add_2_8 = std_add(32);
 
-	    a1_0 = std_add(32);  a1_1 = std_add(32);  a1_2 = std_add(32);  a1_3 = std_add(32);
-	    a1_4 = std_add(32);  a1_5 = std_add(32);  a1_6 = std_add(32);  a1_7 = std_add(32);
-	    a1_8 = std_add(32);  a1_9 = std_add(32);  a1_10 = std_add(32); a1_11 = std_add(32);
+    add_3_0 = std_add(32); add_3_1 = std_add(32); add_3_2 = std_add(32); add_3_3 = std_add(32); add_3_4 = std_add(32);
 
-	    a2_0 = std_add(32); a2_1 = std_add(32); a2_2 = std_add(32);
-	    a2_3 = std_add(32); a2_4 = std_add(32); a2_5 = std_add(32);
+    add_4_0 = std_add(32); add_4_1 = std_add(32);
 
-	    a3_0 = std_add(32); a3_1 = std_add(32); a3_2 = std_add(32);
+    add_5_0 = std_add(32);
 
-	    a4_0 = std_add(32); a4_1 = std_add(32);
+    add_6_0 = std_add(32);
 
-	    a5_0 = std_add(32);
+    res = std_reg(32);
+    slt = std_slt(32);
+  }
 
-	    res = std_reg(32);
+  wires {
+    out = res.out;
+
+    group conv_multiply {
+      // R channel: m_0..m_24
+      m_0.left = win_r_0_0; m_0.right = ker_r_0_0; m_0.go = 1'd1;
+      m_1.left = win_r_0_1; m_1.right = ker_r_0_1; m_1.go = 1'd1;
+      m_2.left = win_r_0_2; m_2.right = ker_r_0_2; m_2.go = 1'd1;
+      m_3.left = win_r_0_3; m_3.right = ker_r_0_3; m_3.go = 1'd1;
+      m_4.left = win_r_0_4; m_4.right = ker_r_0_4; m_4.go = 1'd1;
+      m_5.left = win_r_1_0; m_5.right = ker_r_1_0; m_5.go = 1'd1;
+      m_6.left = win_r_1_1; m_6.right = ker_r_1_1; m_6.go = 1'd1;
+      m_7.left = win_r_1_2; m_7.right = ker_r_1_2; m_7.go = 1'd1;
+      m_8.left = win_r_1_3; m_8.right = ker_r_1_3; m_8.go = 1'd1;
+      m_9.left = win_r_1_4; m_9.right = ker_r_1_4; m_9.go = 1'd1;
+      m_10.left = win_r_2_0; m_10.right = ker_r_2_0; m_10.go = 1'd1;
+      m_11.left = win_r_2_1; m_11.right = ker_r_2_1; m_11.go = 1'd1;
+      m_12.left = win_r_2_2; m_12.right = ker_r_2_2; m_12.go = 1'd1;
+      m_13.left = win_r_2_3; m_13.right = ker_r_2_3; m_13.go = 1'd1;
+      m_14.left = win_r_2_4; m_14.right = ker_r_2_4; m_14.go = 1'd1;
+      m_15.left = win_r_3_0; m_15.right = ker_r_3_0; m_15.go = 1'd1;
+      m_16.left = win_r_3_1; m_16.right = ker_r_3_1; m_16.go = 1'd1;
+      m_17.left = win_r_3_2; m_17.right = ker_r_3_2; m_17.go = 1'd1;
+      m_18.left = win_r_3_3; m_18.right = ker_r_3_3; m_18.go = 1'd1;
+      m_19.left = win_r_3_4; m_19.right = ker_r_3_4; m_19.go = 1'd1;
+      m_20.left = win_r_4_0; m_20.right = ker_r_4_0; m_20.go = 1'd1;
+      m_21.left = win_r_4_1; m_21.right = ker_r_4_1; m_21.go = 1'd1;
+      m_22.left = win_r_4_2; m_22.right = ker_r_4_2; m_22.go = 1'd1;
+      m_23.left = win_r_4_3; m_23.right = ker_r_4_3; m_23.go = 1'd1;
+      m_24.left = win_r_4_4; m_24.right = ker_r_4_4; m_24.go = 1'd1;
+
+      // G channel: m_25..m_49
+      m_25.left = win_g_0_0; m_25.right = ker_g_0_0; m_25.go = 1'd1;
+      m_26.left = win_g_0_1; m_26.right = ker_g_0_1; m_26.go = 1'd1;
+      m_27.left = win_g_0_2; m_27.right = ker_g_0_2; m_27.go = 1'd1;
+      m_28.left = win_g_0_3; m_28.right = ker_g_0_3; m_28.go = 1'd1;
+      m_29.left = win_g_0_4; m_29.right = ker_g_0_4; m_29.go = 1'd1;
+      m_30.left = win_g_1_0; m_30.right = ker_g_1_0; m_30.go = 1'd1;
+      m_31.left = win_g_1_1; m_31.right = ker_g_1_1; m_31.go = 1'd1;
+      m_32.left = win_g_1_2; m_32.right = ker_g_1_2; m_32.go = 1'd1;
+      m_33.left = win_g_1_3; m_33.right = ker_g_1_3; m_33.go = 1'd1;
+      m_34.left = win_g_1_4; m_34.right = ker_g_1_4; m_34.go = 1'd1;
+      m_35.left = win_g_2_0; m_35.right = ker_g_2_0; m_35.go = 1'd1;
+      m_36.left = win_g_2_1; m_36.right = ker_g_2_1; m_36.go = 1'd1;
+      m_37.left = win_g_2_2; m_37.right = ker_g_2_2; m_37.go = 1'd1;
+      m_38.left = win_g_2_3; m_38.right = ker_g_2_3; m_38.go = 1'd1;
+      m_39.left = win_g_2_4; m_39.right = ker_g_2_4; m_39.go = 1'd1;
+      m_40.left = win_g_3_0; m_40.right = ker_g_3_0; m_40.go = 1'd1;
+      m_41.left = win_g_3_1; m_41.right = ker_g_3_1; m_41.go = 1'd1;
+      m_42.left = win_g_3_2; m_42.right = ker_g_3_2; m_42.go = 1'd1;
+      m_43.left = win_g_3_3; m_43.right = ker_g_3_3; m_43.go = 1'd1;
+      m_44.left = win_g_3_4; m_44.right = ker_g_3_4; m_44.go = 1'd1;
+      m_45.left = win_g_4_0; m_45.right = ker_g_4_0; m_45.go = 1'd1;
+      m_46.left = win_g_4_1; m_46.right = ker_g_4_1; m_46.go = 1'd1;
+      m_47.left = win_g_4_2; m_47.right = ker_g_4_2; m_47.go = 1'd1;
+      m_48.left = win_g_4_3; m_48.right = ker_g_4_3; m_48.go = 1'd1;
+      m_49.left = win_g_4_4; m_49.right = ker_g_4_4; m_49.go = 1'd1;
+
+      // B channel: m_50..m_74
+      m_50.left = win_b_0_0; m_50.right = ker_b_0_0; m_50.go = 1'd1;
+      m_51.left = win_b_0_1; m_51.right = ker_b_0_1; m_51.go = 1'd1;
+      m_52.left = win_b_0_2; m_52.right = ker_b_0_2; m_52.go = 1'd1;
+      m_53.left = win_b_0_3; m_53.right = ker_b_0_3; m_53.go = 1'd1;
+      m_54.left = win_b_0_4; m_54.right = ker_b_0_4; m_54.go = 1'd1;
+      m_55.left = win_b_1_0; m_55.right = ker_b_1_0; m_55.go = 1'd1;
+      m_56.left = win_b_1_1; m_56.right = ker_b_1_1; m_56.go = 1'd1;
+      m_57.left = win_b_1_2; m_57.right = ker_b_1_2; m_57.go = 1'd1;
+      m_58.left = win_b_1_3; m_58.right = ker_b_1_3; m_58.go = 1'd1;
+      m_59.left = win_b_1_4; m_59.right = ker_b_1_4; m_59.go = 1'd1;
+      m_60.left = win_b_2_0; m_60.right = ker_b_2_0; m_60.go = 1'd1;
+      m_61.left = win_b_2_1; m_61.right = ker_b_2_1; m_61.go = 1'd1;
+      m_62.left = win_b_2_2; m_62.right = ker_b_2_2; m_62.go = 1'd1;
+      m_63.left = win_b_2_3; m_63.right = ker_b_2_3; m_63.go = 1'd1;
+      m_64.left = win_b_2_4; m_64.right = ker_b_2_4; m_64.go = 1'd1;
+      m_65.left = win_b_3_0; m_65.right = ker_b_3_0; m_65.go = 1'd1;
+      m_66.left = win_b_3_1; m_66.right = ker_b_3_1; m_66.go = 1'd1;
+      m_67.left = win_b_3_2; m_67.right = ker_b_3_2; m_67.go = 1'd1;
+      m_68.left = win_b_3_3; m_68.right = ker_b_3_3; m_68.go = 1'd1;
+      m_69.left = win_b_3_4; m_69.right = ker_b_3_4; m_69.go = 1'd1;
+      m_70.left = win_b_4_0; m_70.right = ker_b_4_0; m_70.go = 1'd1;
+      m_71.left = win_b_4_1; m_71.right = ker_b_4_1; m_71.go = 1'd1;
+      m_72.left = win_b_4_2; m_72.right = ker_b_4_2; m_72.go = 1'd1;
+      m_73.left = win_b_4_3; m_73.right = ker_b_4_3; m_73.go = 1'd1;
+      m_74.left = win_b_4_4; m_74.right = ker_b_4_4; m_74.go = 1'd1;
+
+      conv_multiply[done] = m_0.done;
     }
-	wires {
-    	out = res.out;
 
-		group compute_conv {
-			// Step 0: 25 Multiplications in parallel
-			m_0_0.left = win_0_0; m_0_0.right = ker_0_0; m_0_0.go = 1'd1;
-			m_0_1.left = win_0_1; m_0_1.right = ker_0_1; m_0_1.go = 1'd1;
-			m_0_2.left = win_0_2; m_0_2.right = ker_0_2; m_0_2.go = 1'd1;
-			m_0_3.left = win_0_3; m_0_3.right = ker_0_3; m_0_3.go = 1'd1;
-			m_0_4.left = win_0_4; m_0_4.right = ker_0_4; m_0_4.go = 1'd1;
+    group conv_addition {
+      // Level 0: 37 pairs + m_74 carry
+      add_0_0.left = m_0.out;  add_0_0.right = m_1.out;
+      add_0_1.left = m_2.out;  add_0_1.right = m_3.out;
+      add_0_2.left = m_4.out;  add_0_2.right = m_5.out;
+      add_0_3.left = m_6.out;  add_0_3.right = m_7.out;
+      add_0_4.left = m_8.out;  add_0_4.right = m_9.out;
+      add_0_5.left = m_10.out; add_0_5.right = m_11.out;
+      add_0_6.left = m_12.out; add_0_6.right = m_13.out;
+      add_0_7.left = m_14.out; add_0_7.right = m_15.out;
+      add_0_8.left = m_16.out; add_0_8.right = m_17.out;
+      add_0_9.left = m_18.out; add_0_9.right = m_19.out;
+      add_0_10.left = m_20.out; add_0_10.right = m_21.out;
+      add_0_11.left = m_22.out; add_0_11.right = m_23.out;
+      add_0_12.left = m_24.out; add_0_12.right = m_25.out;
+      add_0_13.left = m_26.out; add_0_13.right = m_27.out;
+      add_0_14.left = m_28.out; add_0_14.right = m_29.out;
+      add_0_15.left = m_30.out; add_0_15.right = m_31.out;
+      add_0_16.left = m_32.out; add_0_16.right = m_33.out;
+      add_0_17.left = m_34.out; add_0_17.right = m_35.out;
+      add_0_18.left = m_36.out; add_0_18.right = m_37.out;
+      add_0_19.left = m_38.out; add_0_19.right = m_39.out;
+      add_0_20.left = m_40.out; add_0_20.right = m_41.out;
+      add_0_21.left = m_42.out; add_0_21.right = m_43.out;
+      add_0_22.left = m_44.out; add_0_22.right = m_45.out;
+      add_0_23.left = m_46.out; add_0_23.right = m_47.out;
+      add_0_24.left = m_48.out; add_0_24.right = m_49.out;
+      add_0_25.left = m_50.out; add_0_25.right = m_51.out;
+      add_0_26.left = m_52.out; add_0_26.right = m_53.out;
+      add_0_27.left = m_54.out; add_0_27.right = m_55.out;
+      add_0_28.left = m_56.out; add_0_28.right = m_57.out;
+      add_0_29.left = m_58.out; add_0_29.right = m_59.out;
+      add_0_30.left = m_60.out; add_0_30.right = m_61.out;
+      add_0_31.left = m_62.out; add_0_31.right = m_63.out;
+      add_0_32.left = m_64.out; add_0_32.right = m_65.out;
+      add_0_33.left = m_66.out; add_0_33.right = m_67.out;
+      add_0_34.left = m_68.out; add_0_34.right = m_69.out;
+      add_0_35.left = m_70.out; add_0_35.right = m_71.out;
+      add_0_36.left = m_72.out; add_0_36.right = m_73.out;
 
-			m_1_0.left = win_1_0; m_1_0.right = ker_1_0; m_1_0.go = 1'd1;
-			m_1_1.left = win_1_1; m_1_1.right = ker_1_1; m_1_1.go = 1'd1;
-			m_1_2.left = win_1_2; m_1_2.right = ker_1_2; m_1_2.go = 1'd1;
-			m_1_3.left = win_1_3; m_1_3.right = ker_1_3; m_1_3.go = 1'd1;
-			m_1_4.left = win_1_4; m_1_4.right = ker_1_4; m_1_4.go = 1'd1;
+      // Level 1: 19 adders (18 pairs + last pair uses m_74)
+      add_1_0.left = add_0_0.out;  add_1_0.right = add_0_1.out;
+      add_1_1.left = add_0_2.out;  add_1_1.right = add_0_3.out;
+      add_1_2.left = add_0_4.out;  add_1_2.right = add_0_5.out;
+      add_1_3.left = add_0_6.out;  add_1_3.right = add_0_7.out;
+      add_1_4.left = add_0_8.out;  add_1_4.right = add_0_9.out;
+      add_1_5.left = add_0_10.out; add_1_5.right = add_0_11.out;
+      add_1_6.left = add_0_12.out; add_1_6.right = add_0_13.out;
+      add_1_7.left = add_0_14.out; add_1_7.right = add_0_15.out;
+      add_1_8.left = add_0_16.out; add_1_8.right = add_0_17.out;
+      add_1_9.left = add_0_18.out; add_1_9.right = add_0_19.out;
+      add_1_10.left = add_0_20.out; add_1_10.right = add_0_21.out;
+      add_1_11.left = add_0_22.out; add_1_11.right = add_0_23.out;
+      add_1_12.left = add_0_24.out; add_1_12.right = add_0_25.out;
+      add_1_13.left = add_0_26.out; add_1_13.right = add_0_27.out;
+      add_1_14.left = add_0_28.out; add_1_14.right = add_0_29.out;
+      add_1_15.left = add_0_30.out; add_1_15.right = add_0_31.out;
+      add_1_16.left = add_0_32.out; add_1_16.right = add_0_33.out;
+      add_1_17.left = add_0_34.out; add_1_17.right = add_0_35.out;
+      add_1_18.left = add_0_36.out; add_1_18.right = m_74.out;
 
-			m_2_0.left = win_2_0; m_2_0.right = ker_2_0; m_2_0.go = 1'd1;
-			m_2_1.left = win_2_1; m_2_1.right = ker_2_1; m_2_1.go = 1'd1;
-			m_2_2.left = win_2_2; m_2_2.right = ker_2_2; m_2_2.go = 1'd1;
-			m_2_3.left = win_2_3; m_2_3.right = ker_2_3; m_2_3.go = 1'd1'
-			m_2_4.left = win_2_4; m_2_4.right = ker_2_4; m_2_4.go = 1'd1;
+      // Level 2: 9 adders
+      add_2_0.left = add_1_0.out;  add_2_0.right = add_1_1.out;
+      add_2_1.left = add_1_2.out;  add_2_1.right = add_1_3.out;
+      add_2_2.left = add_1_4.out;  add_2_2.right = add_1_5.out;
+      add_2_3.left = add_1_6.out;  add_2_3.right = add_1_7.out;
+      add_2_4.left = add_1_8.out;  add_2_4.right = add_1_9.out;
+      add_2_5.left = add_1_10.out; add_2_5.right = add_1_11.out;
+      add_2_6.left = add_1_12.out; add_2_6.right = add_1_13.out;
+      add_2_7.left = add_1_14.out; add_2_7.right = add_1_15.out;
+      add_2_8.left = add_1_16.out; add_2_8.right = add_1_17.out;
 
-			m_3_0.left = win_3_0; m_3_0.right = ker_3_0; m_3_0.go = 1'd1;
-			m_3_1.left = win_3_1; m_3_1.right = ker_3_1; m_3_1.go = 1'd1;
-			m_3_2.left = win_3_2; m_3_2.right = ker_3_2; m_3_2.go = 1'd1;
-			m_3_3.left = win_3_3; m_3_3.right = ker_3_3; m_3_3.go = 1'd1;
-			m_3_4.left = win_3_4; m_3_4.right = ker_3_4; m_3_4.go = 1'd1;
+      // Level 3: 5 adders (last one consumes add_1_18 carry)
+      add_3_0.left = add_2_0.out; add_3_0.right = add_2_1.out;
+      add_3_1.left = add_2_2.out; add_3_1.right = add_2_3.out;
+      add_3_2.left = add_2_4.out; add_3_2.right = add_2_5.out;
+      add_3_3.left = add_2_6.out; add_3_3.right = add_2_7.out;
+      add_3_4.left = add_2_8.out; add_3_4.right = add_1_18.out;
 
-			m_4_0.left = win_4_0; m_4_0.right = ker_4_0; m_4_0.go = 1'd1;
-			m_4_1.left = win_4_1; m_4_1.right = ker_4_1; m_4_1.go = 1'd1;
-			m_4_2.left = win_4_2; m_4_2.right = ker_4_2; m_4_2.go = 1'd1;
-			m_4_3.left = win_4_3; m_4_3.right = ker_4_3; m_4_3.go = 1'd1;
-			m_4_4.left = win_4_4; m_4_4.right = ker_4_4; m_4_4.go = 1'd1;
+      // Level 4: 2 adders (add_3_4 carries)
+      add_4_0.left = add_3_0.out; add_4_0.right = add_3_1.out;
+      add_4_1.left = add_3_2.out; add_4_1.right = add_3_3.out;
 
-			// Level 1: Sum 24 products in pairs (m_4_4 is leftover for now)
-			a1_0.left = m_0_0.out; a1_0.right = m_0_1.out;
-			a1_1.left = m_0_2.out; a1_1.right = m_0_3.out;
-			a1_2.left = m_0_4.out; a1_2.right = m_1_0.out;
-			a1_3.left = m_1_1.out; a1_3.right = m_1_2.out;
-			a1_4.left = m_1_3.out; a1_4.right = m_1_4.out;
-			a1_5.left = m_2_0.out; a1_5.right = m_2_1.out;
-			a1_6.left = m_2_2.out; a1_6.right = m_2_3.out;
-			a1_7.left = m_2_4.out; a1_7.right = m_3_0.out;
-			a1_8.left = m_3_1.out; a1_8.right = m_3_2.out;
-			a1_9.left = m_3_3.out; a1_9.right = m_3_4.out;
-			a1_10.left = m_4_0.out; a1_10.right = m_4_1.out;
-			a1_11.left = m_4_2.out; a1_11.right = m_4_3.out;
+      // Level 5: 1 adder (add_3_4 carries)
+      add_5_0.left = add_4_0.out; add_5_0.right = add_4_1.out;
 
-			// Level 2: Sum 12 results in pairs
-			a2_0.left = a1_0.out; a2_0.right = a1_1.out;
-			a2_1.left = a1_2.out; a2_1.right = a1_3.out;
-			a2_2.left = a1_4.out; a2_2.right = a1_5.out;
-			a2_3.left = a1_6.out; a2_3.right = a1_7.out;
-			a2_4.left = a1_8.out; a2_4.right = a1_9.out;
-			a2_5.left = a1_10.out; a2_5.right = a1_11.out;
+      // Level 6: final
+      add_6_0.left = add_5_0.out; add_6_0.right = add_3_4.out;
 
-			// Level 3: Sum 6 results in pairs
-			a3_0.left = a2_0.out; a3_0.right = a2_1.out;
-			a3_1.left = a2_2.out; a3_1.right = a2_3.out;
-			a3_2.left = a2_4.out; a3_2.right = a2_5.out;
+      slt.left = add_6_0.out;
+      slt.right = 32'd0;
 
-			// Level 4: Sum a3_0 + a3_1, and a3_2 + leftover m_4_4
-			a4_0.left = a3_0.out; a4_0.right = a3_1.out;
-			a4_1.left = a3_2.out; a4_1.right = m_4_4.out;
+      // This is a RELU
+      res.in = slt.out ? 32'd0;
+      res.in = !slt.out ? add_6_0.out;
 
-			// Level 5: Final addition
-			a5_0.left = a4_0.out; a5_0.right = a4_1.out;
-
-			// Latch final result
-			res.in = a5_0.out;
-			res.write_en = 1'd1;
-
-			compute_conv[done] = res.done;
-		}
-    group perform_addition {
-
-		// Level 1: Sum 24 products in pairs (m_4_4 is leftover for now)
-		a1_0.left = m_0_0.out; a1_0.right = m_0_1.out;
-		a1_1.left = m_0_2.out; a1_1.right = m_0_3.out;
-		a1_2.left = m_0_4.out; a1_2.right = m_1_0.out;
-		a1_3.left = m_1_1.out; a1_3.right = m_1_2.out;
-		a1_4.left = m_1_3.out; a1_4.right = m_1_4.out;
-		a1_5.left = m_2_0.out; a1_5.right = m_2_1.out;
-		a1_6.left = m_2_2.out; a1_6.right = m_2_3.out;
-		a1_7.left = m_2_4.out; a1_7.right = m_3_0.out;
-		a1_8.left = m_3_1.out; a1_8.right = m_3_2.out;
-		a1_9.left = m_3_3.out; a1_9.right = m_3_4.out;
-		a1_10.left = m_4_0.out; a1_10.right = m_4_1.out;
-		a1_11.left = m_4_2.out; a1_11.right = m_4_3.out;
-
-		// Level 2: Sum 12 results in pairs
-		a2_0.left = a1_0.out; a2_0.right = a1_1.out;
-		a2_1.left = a1_2.out; a2_1.right = a1_3.out;
-		a2_2.left = a1_4.out; a2_2.right = a1_5.out;
-		a2_3.left = a1_6.out; a2_3.right = a1_7.out;
-		a2_4.left = a1_8.out; a2_4.right = a1_9.out;
-		a2_5.left = a1_10.out; a2_5.right = a1_11.out;
-
-		// Level 3: Sum 6 results in pairs
-		a3_0.left = a2_0.out; a3_0.right = a2_1.out;
-		a3_1.left = a2_2.out; a3_1.right = a2_3.out;
-		a3_2.left = a2_4.out; a3_2.right = a2_5.out;
-
-		// Level 4: Sum a3_0 + a3_1, and a3_2 + leftover m_4_4
-		a4_0.left = a3_0.out; a4_0.right = a3_1.out;
-		a4_1.left = a3_2.out; a4_1.right = m_4_4.out;
-
-		// Level 5: Final addition
-		a5_0.left = a4_0.out; a5_0.right = a4_1.out;
-
-		res.in = a5_0.out;
-		rest.write_en = 1'd1;
+      res.write_en = 1'd1;
+      conv_addition[done] = res.done;
     }
-	}
-	control {
-	  seq {
-	    compute_conv;
-	  }
-	}
+  }
+
+  control {
+    seq {
+      conv_multiply;
+      conv_addition;
+    }
+  }
 }
 
 component filter_cache(ptr: 32, @go go: 1) -> (
@@ -676,6 +813,214 @@ component window_cache(
   }
 }
 
+component lineBuffer_1(pixel_in: 32, @go go: 1) -> (
+    out: 1,
+    win_0_0: 32, win_0_1: 32, win_0_2: 32,
+    win_1_0: 32, win_1_1: 32, win_1_2: 32,
+    @done done: 1) {
+
+  cells {
+
+    one = std_const(32, 1);
+    eq  = std_eq(32);
+
+    //Store pixels for 1 windows
+     mem_0 = seq_mem_d1(32, 56, 32);
+
+    // Pixels for Sliding window
+    reg_0_0 = std_reg(32);
+    reg_0_1 = std_reg(32);
+    reg_0_2 = std_reg(32);
+    reg_1_0 = std_reg(32);
+    reg_1_1 = std_reg(32);
+    reg_1_2 = std_reg(32);
+
+    reg_col_count = std_reg(32);
+    reg_row_count = std_reg(32);
+
+    reg_p0 = std_reg(32);
+
+    adder0 = std_add(32);
+    adder1 = std_add(32);
+
+    valid = std_reg(1);
+    slt0 = std_slt(32);
+    slt1 = std_slt(32);
+
+  }
+
+  wires {
+    win_0_0 = reg_0_0.out; win_0_1 = reg_0_1.out; win_0_2 = reg_0_2.out;
+    win_1_0 = reg_1_0.out; win_1_1 = reg_1_1.out; win_1_2 = reg_1_2.out;
+
+    group read_buffer_r0 {
+       mem_0.addr0 = reg_col_count.out;
+       mem_0.content_en = 1'd1;
+       mem_0.write_en = 1'd0;
+       reg_p0.in = mem_0.read_data;
+       reg_p0.write_en = mem_0.done;
+
+       read_buffer_r0[done] = reg_p0.done;
+    }
+
+
+    group write_buffer_r0 {
+       mem_0.addr0 = reg_col_count.out;
+       mem_0.content_en = 1'd1;
+       mem_0.write_en = 1'd1;
+       mem_0.write_data = pixel_in;
+
+       write_buffer_r0[done] = mem_0.done;
+    }
+
+    group shift_window_registers {
+       reg_0_0.write_en = 1'd1;
+       reg_0_0.in = reg_0_1.out;
+       reg_0_1.write_en = 1'd1;
+       reg_0_1.in = reg_0_2.out;
+       reg_0_2.write_en = 1'd1;
+       reg_0_2.in = reg_p0.out;
+
+
+       reg_1_0.write_en = 1'd1;
+       reg_1_0.in = reg_1_1.out;
+       reg_1_1.write_en = 1'd1;
+       reg_1_1.in = reg_1_2.out;
+       reg_1_2.write_en = 1'd1;
+       reg_1_2.in = pixel_in;
+
+       shift_window_registers[done] = reg_0_0.done;
+    }
+
+    group incr_ptrs {
+
+        eq.left = reg_col_count.out;
+        eq.right = 32'd56;
+
+        adder0.left = reg_col_count.out;
+        adder0.right = one.out;
+
+        adder1.left = reg_row_count.out;
+        adder1.right = one.out;
+
+        reg_col_count.write_en = 1'd1;
+
+        reg_col_count.in = eq.out ? 32'd0;
+        reg_col_count.in = !eq.out ? adder0.out;
+
+        reg_row_count.write_en = eq.out ? 1'd1;
+        reg_row_count.in = eq.out ? adder1.out;
+
+        incr_ptrs[done] = reg_col_count.done;
+    }
+
+    // Update the valid bit
+    group set_status {
+        valid.write_en = 1'd1;
+        slt0.left = reg_col_count.out;
+        slt0.right = 32'd54;
+
+        slt1.left = reg_row_count.out;
+        slt1.right = 32'd75;
+
+        valid.in = slt0.out & slt1.out ? 1'd1;
+        valid.in = !(slt0.out & slt1.out) ? 1'd0;
+
+        set_status[done] = valid.done;
+    }
+
+  }
+  control{
+      seq{
+        par {
+          read_buffer_r0;
+        }
+
+        par {
+          write_buffer_r0;
+
+          shift_window_registers;
+        }
+
+      incr_ptrs;
+      set_status;
+      }
+  }
+}
+
+component max6(
+    in0: 32, in1: 32, in2: 32, in3: 32, in4: 32, in5: 32,
+    @go go: 1) -> (out: 32, @done done: 1) {
+  cells {
+    // Signed comparators
+    slt0 = std_slt(32);
+    slt1 = std_slt(32);
+    slt2 = std_slt(32);
+    slt3 = std_slt(32);
+    slt4 = std_slt(32);
+
+    res = std_reg(32);
+
+    // intermediate reg
+    val_m0 = std_reg(32);
+    val_m1 = std_reg(32);
+    val_m2 = std_reg(32);
+    val_m3 = std_reg(32);
+  }
+  wires {
+    out = res.out;
+
+    group compute_max_first_stage {
+      // max betn in0 and in1
+      slt0.left = in0; slt0.right = in1;
+      val_m0.write_en = 1'd1;
+      val_m0.in = slt0.out ? in1;
+      val_m0.in = !slt0.out ? in0;
+
+      // max betn in2 and in3
+      slt1.left = in2; slt1.right = in3;
+      val_m1.write_en = 1'd1;
+      val_m1.in = slt1.out ? in3;
+      val_m1.in = !slt1.out ? in2;
+
+      // max betn in4 and in5
+      slt2.left = in4; slt2.right = in5;
+      val_m2.write_en = 1'd1;
+      val_m2.in = slt2.out ? in5;
+      val_m2.in = !slt2.out ? in4;
+
+      compute_max_first_stage[done] = val_m2.done;
+    }
+
+    group compute_max_second_stage {
+      // max betn in0, in1, in2, in3 : m0
+      slt3.left = val_m0.out; slt3.right = val_m1.out;
+      val_m3.write_en = 1'd1;
+      val_m3.in = slt3.out ? val_m1.out;
+      val_m3.in = !slt3.out ? val_m0.out;
+
+      compute_max_second_stage[done] = val_m3.done;
+    }
+
+    group compute_max_final_stage {
+      // max betn m0 , i4 and i5
+      slt4.left = val_m3.out; slt4.right = val_m2.out;
+      res.write_en = 1'd1;
+      res.in = slt4.out ? val_m2.out;
+      res.in = !slt4.out ? val_m3.out;
+
+      compute_max_final_stage[done] = res.done;
+    }
+  }
+  control {
+    seq {
+        compute_max_first_stage;
+        compute_max_second_stage;
+        compute_max_final_stage;
+    }
+  }
+}
+
 component main(@go go: 1) -> (@done done: 1) {
   cells {
      one = std_const(32, 1);
@@ -691,7 +1036,7 @@ component main(@go go: 1) -> (@done done: 1) {
      // weights
      @external(1) weights = seq_mem_d1(32, 600, 32);
      // output feature maps (8 * 4800 = 38400 words)
-     @external(1) out_mem = seq_mem_d1(32, 38400, 32);
+     @external(1) out_mem = seq_mem_d1(32, 4256, 32);
 
      adder = std_add(32);
      offset_adder = std_add(32);
@@ -715,15 +1060,40 @@ component main(@go go: 1) -> (@done done: 1) {
      linebuffer_g = lineBuffer();
      linebuffer_b = lineBuffer();
 
-     conv_r = conv_engine();
-     conv_g = conv_engine();
-     conv_b = conv_engine();
+     conv_ch0 = conv_engine();
+     conv_ch1 = conv_engine();
+     conv_ch2 = conv_engine();
+     conv_ch3 = conv_engine();
+     conv_ch4 = conv_engine();
+     conv_ch5 = conv_engine();
+     conv_ch6 = conv_engine();
+     conv_ch7 = conv_engine();
 
-     cache = filter_cache();
+     pool_ch0 = lineBuffer_1();
+     pool_ch1 = lineBuffer_1();
+     pool_ch2 = lineBuffer_1();
+     pool_ch3 = lineBuffer_1();
+     pool_ch4 = lineBuffer_1();
+     pool_ch5 = lineBuffer_1();
+     pool_ch6 = lineBuffer_1();
+     pool_ch7 = lineBuffer_1();
+
+
+     cache_ch0 = filter_cache();
+     cache_ch1 = filter_cache();
+     cache_ch2 = filter_cache();
+     cache_ch3 = filter_cache();
+     cache_ch4 = filter_cache();
+     cache_ch5 = filter_cache();
+     cache_ch6 = filter_cache();
+     cache_ch7 = filter_cache();
 
      cache_win_r = window_cache();
      cache_win_g = window_cache();
-     cache_win_b = window_cahce();
+     cache_win_b = window_cache();
+
+     should_convolve = std_reg(1);
+     should_pool = std_reg(1);
   }
   wires {
      group read_pixels_r {
@@ -774,54 +1144,62 @@ component main(@go go: 1) -> (@done done: 1) {
         incr_idx[done] = idx.done;
      }
 
-     group combine_rgb {
-        sum_rg.left = conv_r.out;
-        sum_rg.right = conv_g.out;
+     group debug_dump {
+	    out_mem.addr0 = 32'd0;
+	    out_mem.write_data = conv_ch0.out;
+	    out_mem.write_en = 1'd1;
+	    out_mem.content_en = 1'd1;
+	    debug_dump[done] = out_mem.done;
+	}
 
-        final_adder.left = sum_rg.out;
-        final_adder.right = conv_b.out;
+     //group reset_idx {
+     //   idx.write_en = 1'd1;
+     //   idx.in = 32'd0;
 
-        final_pixel.in = final_adder.out;
-        final_pixel.write_en = 1'd1;
-        combine_rgb[done] = final_pixel.done;
+     //   reset_idx[done] = idx.done;
+     //}
+
+     //group reset_filter_ptr {
+       // filter_ptr.write_en = 1'd1;
+       // filter_ptr.in = 32'd0;
+
+       // reset_filter_ptr[done] = filter_ptr.done;
+     //}
+
+     //group incr_filter_ptr {
+       // filter_ptr_adder.left = filter_ptr.out;
+       // filter_ptr_adder.right = 32'd75;
+
+       // filter_ptr.write_en = 1'd1;
+       // filter_ptr.in = filter_ptr_adder.out;
+
+       // incr_filter_ptr[done] = filter_ptr.done;
+     //}
+     //group write_out_mem {
+       // out_mem.addr0 = out_idx.out;
+       // out_mem.write_data = final_pixel.out;
+       // out_mem.content_en = 1'd1;
+       // out_mem.write_en = 1'd1;
+       // write_out_mem[done] = out_mem.done;
+    // }
+
+     group update_valid_bit {
+         should_convolve.write_en = 1'd1;
+         should_convolve.in = linebuffer_r.out;
+         update_valid_bit[done] = should_convolve.done;
      }
 
-     group reset_idx {
-        idx.write_en = 1'd1;
-        idx.in = 32'd0;
-
-        reset_idx[done] = idx.done;
-     }
-
-     group reset_filter_ptr {
-        filter_ptr.write_en = 1'd1;
-        filter_ptr.in = 32'd0;
-
-        reset_filter_ptr[done] = filter_ptr.done;
-     }
-
-     group incr_filter_ptr {
-        filter_ptr_adder.left = filter_ptr.out;
-        filter_ptr_adder.right = 32'd75;
-
-        filter_ptr.write_en = 1'd1;
-        filter_ptr.in = filter_ptr_adder.out;
-
-        incr_filter_ptr[done] = filter_ptr.done;
-     }
-     group write_out_mem {
-        out_mem.addr0 = out_idx.out;
-        out_mem.write_data = final_pixel.out;
-        out_mem.content_en = 1'd1;
-        out_mem.write_en = 1'd1;
-        write_out_mem[done] = out_mem.done;
+     group update_pool_status {
+         should_pool.write_en = 1'd1;
+         should_pool.in = pool_ch7.out;
+         update_pool_status[done] = update_pool_status.done;
      }
 
   }
   control {
      seq {
         // line buffer warm up
-        repeat 325 {
+        repeat 245 {
             seq {
                 seq {
                     read_pixels_r;
@@ -834,38 +1212,53 @@ component main(@go go: 1) -> (@done done: 1) {
                     invoke linebuffer_b(pixel_in = pixel_reg_b.out)();
                 }
 
+                update_valid_bit;
                 incr_idx;
            }
         }
 
-       // Write the 5 x 5 window from the line buffer into a cache.
-        par {
-            invoke cache_win_r(
-                in_0_0 = linebuffer_r.win_0_0, in_0_1 = linebuffer_r.win_0_1, in_0_2 = linebuffer_r.win_0_2, in_0_3 = linebuffer_r.win_0_3, in_0_4 = linebuffer_r.win_0_4,
-                in_1_0 = linebuffer_r.win_1_0, in_1_1 = linebuffer_r.win_1_1, in_1_2 = linebuffer_r.win_1_2, in_1_3 = linebuffer_r.win_1_3, in_1_4 = linebuffer_r.win_1_4,
-                in_2_0 = linebuffer_r.win_2_0, in_2_1 = linebuffer_r.win_2_1, in_2_2 = linebuffer_r.win_2_2, in_2_3 = linebuffer_r.win_2_3, in_2_4 = linebuffer_r.win_2_4,
-                in_3_0 = linebuffer_r.win_3_0, in_3_1 = linebuffer_r.win_3_1, in_3_2 = linebuffer_r.win_3_2, in_3_3 = linebuffer_r.win_3_3, in_3_4 = linebuffer_r.win_3_4,
-                in_4_0 = linebuffer_r.win_4_0, in_4_1 = linebuffer_r.win_4_1, in_4_2 = linebuffer_r.win_4_2, in_4_3 = linebuffer_r.win_4_3, in_4_4 = linebuffer_r.win_4_4
-            )();
+       par {
+	        // Write the 5 x 5 window from the line buffer into a cache.
+	        par {
+	            invoke cache_win_r(
+	                in_0_0 = linebuffer_r.win_0_0, in_0_1 = linebuffer_r.win_0_1, in_0_2 = linebuffer_r.win_0_2, in_0_3 = linebuffer_r.win_0_3, in_0_4 = linebuffer_r.win_0_4,
+	                in_1_0 = linebuffer_r.win_1_0, in_1_1 = linebuffer_r.win_1_1, in_1_2 = linebuffer_r.win_1_2, in_1_3 = linebuffer_r.win_1_3, in_1_4 = linebuffer_r.win_1_4,
+	                in_2_0 = linebuffer_r.win_2_0, in_2_1 = linebuffer_r.win_2_1, in_2_2 = linebuffer_r.win_2_2, in_2_3 = linebuffer_r.win_2_3, in_2_4 = linebuffer_r.win_2_4,
+	                in_3_0 = linebuffer_r.win_3_0, in_3_1 = linebuffer_r.win_3_1, in_3_2 = linebuffer_r.win_3_2, in_3_3 = linebuffer_r.win_3_3, in_3_4 = linebuffer_r.win_3_4,
+	                in_4_0 = linebuffer_r.win_4_0, in_4_1 = linebuffer_r.win_4_1, in_4_2 = linebuffer_r.win_4_2, in_4_3 = linebuffer_r.win_4_3, in_4_4 = linebuffer_r.win_4_4
+	            )();
 
-            invoke cache_win_g(
-                in_0_0 = linebuffer_g.win_0_0, in_0_1 = linebuffer_g.win_0_1, in_0_2 = linebuffer_g.win_0_2, in_0_3 = linebuffer_g.win_0_3, in_0_4 = linebuffer_g.win_0_4,
-                in_1_0 = linebuffer_g.win_1_0, in_1_1 = linebuffer_g.win_1_1, in_1_2 = linebuffer_g.win_1_2, in_1_3 = linebuffer_g.win_1_3, in_1_4 = linebuffer_g.win_1_4,
-                in_2_0 = linebuffer_g.win_2_0, in_2_1 = linebuffer_g.win_2_1, in_2_2 = linebuffer_g.win_2_2, in_2_3 = linebuffer_g.win_2_3, in_2_4 = linebuffer_g.win_2_4,
-                in_3_0 = linebuffer_g.win_3_0, in_3_1 = linebuffer_g.win_3_1, in_3_2 = linebuffer_g.win_3_2, in_3_3 = linebuffer_g.win_3_3, in_3_4 = linebuffer_g.win_3_4,
-                in_4_0 = linebuffer_g.win_4_0, in_4_1 = linebuffer_g.win_4_1, in_4_2 = linebuffer_g.win_4_2, in_4_3 = linebuffer_g.win_4_3, in_4_4 = linebuffer_g.win_4_4
-            )();
+	            invoke cache_win_g(
+	                in_0_0 = linebuffer_g.win_0_0, in_0_1 = linebuffer_g.win_0_1, in_0_2 = linebuffer_g.win_0_2, in_0_3 = linebuffer_g.win_0_3, in_0_4 = linebuffer_g.win_0_4,
+	                in_1_0 = linebuffer_g.win_1_0, in_1_1 = linebuffer_g.win_1_1, in_1_2 = linebuffer_g.win_1_2, in_1_3 = linebuffer_g.win_1_3, in_1_4 = linebuffer_g.win_1_4,
+	                in_2_0 = linebuffer_g.win_2_0, in_2_1 = linebuffer_g.win_2_1, in_2_2 = linebuffer_g.win_2_2, in_2_3 = linebuffer_g.win_2_3, in_2_4 = linebuffer_g.win_2_4,
+	                in_3_0 = linebuffer_g.win_3_0, in_3_1 = linebuffer_g.win_3_1, in_3_2 = linebuffer_g.win_3_2, in_3_3 = linebuffer_g.win_3_3, in_3_4 = linebuffer_g.win_3_4,
+	                in_4_0 = linebuffer_g.win_4_0, in_4_1 = linebuffer_g.win_4_1, in_4_2 = linebuffer_g.win_4_2, in_4_3 = linebuffer_g.win_4_3, in_4_4 = linebuffer_g.win_4_4
+	            )();
 
-            invoke cache_win_b(
-                in_0_0 = linebuffer_b.win_0_0, in_0_1 = linebuffer_b.win_0_1, in_0_2 = linebuffer_b.win_0_2, in_0_3 = linebuffer_b.win_0_3, in_0_4 = linebuffer_b.win_0_4,
-                in_1_0 = linebuffer_b.win_1_0, in_1_1 = linebuffer_b.win_1_1, in_1_2 = linebuffer_b.win_1_2, in_1_3 = linebuffer_b.win_1_3, in_1_4 = linebuffer_b.win_1_4,
-                in_2_0 = linebuffer_b.win_2_0, in_2_1 = linebuffer_b.win_2_1, in_2_2 = linebuffer_b.win_2_2, in_2_3 = linebuffer_b.win_2_3, in_2_4 = linebuffer_b.win_2_4,
-                in_3_0 = linebuffer_b.win_3_0, in_3_1 = linebuffer_b.win_3_1, in_3_2 = linebuffer_b.win_3_2, in_3_3 = linebuffer_b.win_3_3, in_3_4 = linebuffer_b.win_3_4,
-                in_4_0 = linebuffer_b.win_4_0, in_4_1 = linebuffer_b.win_4_1, in_4_2 = linebuffer_b.win_4_2, in_4_3 = linebuffer_b.win_4_3, in_4_4 = linebuffer_b.win_4_4
-            )();
-        }
+	            invoke cache_win_b(
+	                in_0_0 = linebuffer_b.win_0_0, in_0_1 = linebuffer_b.win_0_1, in_0_2 = linebuffer_b.win_0_2, in_0_3 = linebuffer_b.win_0_3, in_0_4 = linebuffer_b.win_0_4,
+	                in_1_0 = linebuffer_b.win_1_0, in_1_1 = linebuffer_b.win_1_1, in_1_2 = linebuffer_b.win_1_2, in_1_3 = linebuffer_b.win_1_3, in_1_4 = linebuffer_b.win_1_4,
+	                in_2_0 = linebuffer_b.win_2_0, in_2_1 = linebuffer_b.win_2_1, in_2_2 = linebuffer_b.win_2_2, in_2_3 = linebuffer_b.win_2_3, in_2_4 = linebuffer_b.win_2_4,
+	                in_3_0 = linebuffer_b.win_3_0, in_3_1 = linebuffer_b.win_3_1, in_3_2 = linebuffer_b.win_3_2, in_3_3 = linebuffer_b.win_3_3, in_3_4 = linebuffer_b.win_3_4,
+	                in_4_0 = linebuffer_b.win_4_0, in_4_1 = linebuffer_b.win_4_1, in_4_2 = linebuffer_b.win_4_2, in_4_3 = linebuffer_b.win_4_3, in_4_4 = linebuffer_b.win_4_4
+	            )();
+	        }
 
-        repeat 4475 {
+			seq {
+			    invoke cache_ch0[filter = weights](ptr = 32'd0)();
+			    invoke cache_ch1[filter = weights](ptr = 32'd75)();
+			    invoke cache_ch2[filter = weights](ptr = 32'd150)();
+			    invoke cache_ch3[filter = weights](ptr = 32'd225)();
+			    invoke cache_ch4[filter = weights](ptr = 32'd300)();
+			    invoke cache_ch5[filter = weights](ptr = 32'd375)();
+			    invoke cache_ch6[filter = weights](ptr = 32'd450)();
+			    invoke cache_ch7[filter = weights](ptr = 32'd525)();
+			}
+       }
+
+
+        repeat 4555 {
             seq{
                 par {
                     seq {
@@ -905,193 +1298,294 @@ component main(@go go: 1) -> (@done done: 1) {
                                 in_4_0 = linebuffer_b.win_4_0, in_4_1 = linebuffer_b.win_4_1, in_4_2 = linebuffer_b.win_4_2, in_4_3 = linebuffer_b.win_4_3, in_4_4 = linebuffer_b.win_4_4
                             )();
                         }
+                        incr_idx;
                     }
+                    update_valid_bit;
                     // Perform Convolution
-                    par {
-						invoke conv_r(
-						    win_0_0 = cache_win_r.out_0_0,
-							win_0_1 = cache_win_r.out_0_1,
-							win_0_2 = cache_win_r.out_0_2,
-							win_0_3 = cache_win_r.out_0_3,
-							win_0_4 = cache_win_r.out_0_4,
-							win_1_0 = cache_win_r.out_1_0,
-							win_1_1 = cache_win_r.out_1_1,
-							win_1_2 = cache_win_r.out_1_2,
-							win_1_3 = cache_win_r.out_1_3,
-							win_1_4 = cache_win_r.out_1_4,
+                    if should_convolve.out {
+	                    par {
+							invoke conv_ch0(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch0.win_0_0_r, ker_r_0_1 = cache_ch0.win_0_1_r, ker_r_0_2 = cache_ch0.win_0_2_r, ker_r_0_3 = cache_ch0.win_0_3_r, ker_r_0_4 = cache_ch0.win_0_4_r,
+							    ker_r_1_0 = cache_ch0.win_1_0_r, ker_r_1_1 = cache_ch0.win_1_1_r, ker_r_1_2 = cache_ch0.win_1_2_r, ker_r_1_3 = cache_ch0.win_1_3_r, ker_r_1_4 = cache_ch0.win_1_4_r,
+							    ker_r_2_0 = cache_ch0.win_2_0_r, ker_r_2_1 = cache_ch0.win_2_1_r, ker_r_2_2 = cache_ch0.win_2_2_r, ker_r_2_3 = cache_ch0.win_2_3_r, ker_r_2_4 = cache_ch0.win_2_4_r,
+							    ker_r_3_0 = cache_ch0.win_3_0_r, ker_r_3_1 = cache_ch0.win_3_1_r, ker_r_3_2 = cache_ch0.win_3_2_r, ker_r_3_3 = cache_ch0.win_3_3_r, ker_r_3_4 = cache_ch0.win_3_4_r,
+							    ker_r_4_0 = cache_ch0.win_4_0_r, ker_r_4_1 = cache_ch0.win_4_1_r, ker_r_4_2 = cache_ch0.win_4_2_r, ker_r_4_3 = cache_ch0.win_4_3_r, ker_r_4_4 = cache_ch0.win_4_4_r,
+							    ker_g_0_0 = cache_ch0.win_0_0_g, ker_g_0_1 = cache_ch0.win_0_1_g, ker_g_0_2 = cache_ch0.win_0_2_g, ker_g_0_3 = cache_ch0.win_0_3_g, ker_g_0_4 = cache_ch0.win_0_4_g,
+							    ker_g_1_0 = cache_ch0.win_1_0_g, ker_g_1_1 = cache_ch0.win_1_1_g, ker_g_1_2 = cache_ch0.win_1_2_g, ker_g_1_3 = cache_ch0.win_1_3_g, ker_g_1_4 = cache_ch0.win_1_4_g,
+							    ker_g_2_0 = cache_ch0.win_2_0_g, ker_g_2_1 = cache_ch0.win_2_1_g, ker_g_2_2 = cache_ch0.win_2_2_g, ker_g_2_3 = cache_ch0.win_2_3_g, ker_g_2_4 = cache_ch0.win_2_4_g,
+							    ker_g_3_0 = cache_ch0.win_3_0_g, ker_g_3_1 = cache_ch0.win_3_1_g, ker_g_3_2 = cache_ch0.win_3_2_g, ker_g_3_3 = cache_ch0.win_3_3_g, ker_g_3_4 = cache_ch0.win_3_4_g,
+							    ker_g_4_0 = cache_ch0.win_4_0_g, ker_g_4_1 = cache_ch0.win_4_1_g, ker_g_4_2 = cache_ch0.win_4_2_g, ker_g_4_3 = cache_ch0.win_4_3_g, ker_g_4_4 = cache_ch0.win_4_4_g,
+							    ker_b_0_0 = cache_ch0.win_0_0_b, ker_b_0_1 = cache_ch0.win_0_1_b, ker_b_0_2 = cache_ch0.win_0_2_b, ker_b_0_3 = cache_ch0.win_0_3_b, ker_b_0_4 = cache_ch0.win_0_4_b,
+							    ker_b_1_0 = cache_ch0.win_1_0_b, ker_b_1_1 = cache_ch0.win_1_1_b, ker_b_1_2 = cache_ch0.win_1_2_b, ker_b_1_3 = cache_ch0.win_1_3_b, ker_b_1_4 = cache_ch0.win_1_4_b,
+							    ker_b_2_0 = cache_ch0.win_2_0_b, ker_b_2_1 = cache_ch0.win_2_1_b, ker_b_2_2 = cache_ch0.win_2_2_b, ker_b_2_3 = cache_ch0.win_2_3_b, ker_b_2_4 = cache_ch0.win_2_4_b,
+							    ker_b_3_0 = cache_ch0.win_3_0_b, ker_b_3_1 = cache_ch0.win_3_1_b, ker_b_3_2 = cache_ch0.win_3_2_b, ker_b_3_3 = cache_ch0.win_3_3_b, ker_b_3_4 = cache_ch0.win_3_4_b,
+							    ker_b_4_0 = cache_ch0.win_4_0_b, ker_b_4_1 = cache_ch0.win_4_1_b, ker_b_4_2 = cache_ch0.win_4_2_b, ker_b_4_3 = cache_ch0.win_4_3_b, ker_b_4_4 = cache_ch0.win_4_4_b
+							)();
 
-							win_2_0 = cache_win_r.out_2_0,
-							win_2_1 = cache_win_r.out_2_1,
-							win_2_2 = cache_win_r.out_2_2,
-							win_2_3 = cache_win_r.out_2_3,
-							win_2_4 = cache_win_r.out_2_4,
+							invoke conv_ch1(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch1.win_0_0_r, ker_r_0_1 = cache_ch1.win_0_1_r, ker_r_0_2 = cache_ch1.win_0_2_r, ker_r_0_3 = cache_ch1.win_0_3_r, ker_r_0_4 = cache_ch1.win_0_4_r,
+							    ker_r_1_0 = cache_ch1.win_1_0_r, ker_r_1_1 = cache_ch1.win_1_1_r, ker_r_1_2 = cache_ch1.win_1_2_r, ker_r_1_3 = cache_ch1.win_1_3_r, ker_r_1_4 = cache_ch1.win_1_4_r,
+							    ker_r_2_0 = cache_ch1.win_2_0_r, ker_r_2_1 = cache_ch1.win_2_1_r, ker_r_2_2 = cache_ch1.win_2_2_r, ker_r_2_3 = cache_ch1.win_2_3_r, ker_r_2_4 = cache_ch1.win_2_4_r,
+							    ker_r_3_0 = cache_ch1.win_3_0_r, ker_r_3_1 = cache_ch1.win_3_1_r, ker_r_3_2 = cache_ch1.win_3_2_r, ker_r_3_3 = cache_ch1.win_3_3_r, ker_r_3_4 = cache_ch1.win_3_4_r,
+							    ker_r_4_0 = cache_ch1.win_4_0_r, ker_r_4_1 = cache_ch1.win_4_1_r, ker_r_4_2 = cache_ch1.win_4_2_r, ker_r_4_3 = cache_ch1.win_4_3_r, ker_r_4_4 = cache_ch1.win_4_4_r,
+							    ker_g_0_0 = cache_ch1.win_0_0_g, ker_g_0_1 = cache_ch1.win_0_1_g, ker_g_0_2 = cache_ch1.win_0_2_g, ker_g_0_3 = cache_ch1.win_0_3_g, ker_g_0_4 = cache_ch1.win_0_4_g,
+							    ker_g_1_0 = cache_ch1.win_1_0_g, ker_g_1_1 = cache_ch1.win_1_1_g, ker_g_1_2 = cache_ch1.win_1_2_g, ker_g_1_3 = cache_ch1.win_1_3_g, ker_g_1_4 = cache_ch1.win_1_4_g,
+							    ker_g_2_0 = cache_ch1.win_2_0_g, ker_g_2_1 = cache_ch1.win_2_1_g, ker_g_2_2 = cache_ch1.win_2_2_g, ker_g_2_3 = cache_ch1.win_2_3_g, ker_g_2_4 = cache_ch1.win_2_4_g,
+							    ker_g_3_0 = cache_ch1.win_3_0_g, ker_g_3_1 = cache_ch1.win_3_1_g, ker_g_3_2 = cache_ch1.win_3_2_g, ker_g_3_3 = cache_ch1.win_3_3_g, ker_g_3_4 = cache_ch1.win_3_4_g,
+							    ker_g_4_0 = cache_ch1.win_4_0_g, ker_g_4_1 = cache_ch1.win_4_1_g, ker_g_4_2 = cache_ch1.win_4_2_g, ker_g_4_3 = cache_ch1.win_4_3_g, ker_g_4_4 = cache_ch1.win_4_4_g,
+							    ker_b_0_0 = cache_ch1.win_0_0_b, ker_b_0_1 = cache_ch1.win_0_1_b, ker_b_0_2 = cache_ch1.win_0_2_b, ker_b_0_3 = cache_ch1.win_0_3_b, ker_b_0_4 = cache_ch1.win_0_4_b,
+							    ker_b_1_0 = cache_ch1.win_1_0_b, ker_b_1_1 = cache_ch1.win_1_1_b, ker_b_1_2 = cache_ch1.win_1_2_b, ker_b_1_3 = cache_ch1.win_1_3_b, ker_b_1_4 = cache_ch1.win_1_4_b,
+							    ker_b_2_0 = cache_ch1.win_2_0_b, ker_b_2_1 = cache_ch1.win_2_1_b, ker_b_2_2 = cache_ch1.win_2_2_b, ker_b_2_3 = cache_ch1.win_2_3_b, ker_b_2_4 = cache_ch1.win_2_4_b,
+							    ker_b_3_0 = cache_ch1.win_3_0_b, ker_b_3_1 = cache_ch1.win_3_1_b, ker_b_3_2 = cache_ch1.win_3_2_b, ker_b_3_3 = cache_ch1.win_3_3_b, ker_b_3_4 = cache_ch1.win_3_4_b,
+							    ker_b_4_0 = cache_ch1.win_4_0_b, ker_b_4_1 = cache_ch1.win_4_1_b, ker_b_4_2 = cache_ch1.win_4_2_b, ker_b_4_3 = cache_ch1.win_4_3_b, ker_b_4_4 = cache_ch1.win_4_4_b
+							)();
 
-							win_3_0 = cache_win_r.out_3_0,
-							win_3_1 = cache_win_r.out_3_1,
-							win_3_2 = cache_win_r.out_3_2,
-							win_3_3 = cache_win_r.out_3_3,
-							win_3_4 = cache_win_r.out_3_4,
+							invoke conv_ch2(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch2.win_0_0_r, ker_r_0_1 = cache_ch2.win_0_1_r, ker_r_0_2 = cache_ch2.win_0_2_r, ker_r_0_3 = cache_ch2.win_0_3_r, ker_r_0_4 = cache_ch2.win_0_4_r,
+							    ker_r_1_0 = cache_ch2.win_1_0_r, ker_r_1_1 = cache_ch2.win_1_1_r, ker_r_1_2 = cache_ch2.win_1_2_r, ker_r_1_3 = cache_ch2.win_1_3_r, ker_r_1_4 = cache_ch2.win_1_4_r,
+							    ker_r_2_0 = cache_ch2.win_2_0_r, ker_r_2_1 = cache_ch2.win_2_1_r, ker_r_2_2 = cache_ch2.win_2_2_r, ker_r_2_3 = cache_ch2.win_2_3_r, ker_r_2_4 = cache_ch2.win_2_4_r,
+							    ker_r_3_0 = cache_ch2.win_3_0_r, ker_r_3_1 = cache_ch2.win_3_1_r, ker_r_3_2 = cache_ch2.win_3_2_r, ker_r_3_3 = cache_ch2.win_3_3_r, ker_r_3_4 = cache_ch2.win_3_4_r,
+							    ker_r_4_0 = cache_ch2.win_4_0_r, ker_r_4_1 = cache_ch2.win_4_1_r, ker_r_4_2 = cache_ch2.win_4_2_r, ker_r_4_3 = cache_ch2.win_4_3_r, ker_r_4_4 = cache_ch2.win_4_4_r,
+							    ker_g_0_0 = cache_ch2.win_0_0_g, ker_g_0_1 = cache_ch2.win_0_1_g, ker_g_0_2 = cache_ch2.win_0_2_g, ker_g_0_3 = cache_ch2.win_0_3_g, ker_g_0_4 = cache_ch2.win_0_4_g,
+							    ker_g_1_0 = cache_ch2.win_1_0_g, ker_g_1_1 = cache_ch2.win_1_1_g, ker_g_1_2 = cache_ch2.win_1_2_g, ker_g_1_3 = cache_ch2.win_1_3_g, ker_g_1_4 = cache_ch2.win_1_4_g,
+							    ker_g_2_0 = cache_ch2.win_2_0_g, ker_g_2_1 = cache_ch2.win_2_1_g, ker_g_2_2 = cache_ch2.win_2_2_g, ker_g_2_3 = cache_ch2.win_2_3_g, ker_g_2_4 = cache_ch2.win_2_4_g,
+							    ker_g_3_0 = cache_ch2.win_3_0_g, ker_g_3_1 = cache_ch2.win_3_1_g, ker_g_3_2 = cache_ch2.win_3_2_g, ker_g_3_3 = cache_ch2.win_3_3_g, ker_g_3_4 = cache_ch2.win_3_4_g,
+							    ker_g_4_0 = cache_ch2.win_4_0_g, ker_g_4_1 = cache_ch2.win_4_1_g, ker_g_4_2 = cache_ch2.win_4_2_g, ker_g_4_3 = cache_ch2.win_4_3_g, ker_g_4_4 = cache_ch2.win_4_4_g,
+							    ker_b_0_0 = cache_ch2.win_0_0_b, ker_b_0_1 = cache_ch2.win_0_1_b, ker_b_0_2 = cache_ch2.win_0_2_b, ker_b_0_3 = cache_ch2.win_0_3_b, ker_b_0_4 = cache_ch2.win_0_4_b,
+							    ker_b_1_0 = cache_ch2.win_1_0_b, ker_b_1_1 = cache_ch2.win_1_1_b, ker_b_1_2 = cache_ch2.win_1_2_b, ker_b_1_3 = cache_ch2.win_1_3_b, ker_b_1_4 = cache_ch2.win_1_4_b,
+							    ker_b_2_0 = cache_ch2.win_2_0_b, ker_b_2_1 = cache_ch2.win_2_1_b, ker_b_2_2 = cache_ch2.win_2_2_b, ker_b_2_3 = cache_ch2.win_2_3_b, ker_b_2_4 = cache_ch2.win_2_4_b,
+							    ker_b_3_0 = cache_ch2.win_3_0_b, ker_b_3_1 = cache_ch2.win_3_1_b, ker_b_3_2 = cache_ch2.win_3_2_b, ker_b_3_3 = cache_ch2.win_3_3_b, ker_b_3_4 = cache_ch2.win_3_4_b,
+							    ker_b_4_0 = cache_ch2.win_4_0_b, ker_b_4_1 = cache_ch2.win_4_1_b, ker_b_4_2 = cache_ch2.win_4_2_b, ker_b_4_3 = cache_ch2.win_4_3_b, ker_b_4_4 = cache_ch2.win_4_4_b
+							)();
 
-							win_4_0 = cache_win_r.out_4_0,
-							win_4_1 = cache_win_r.out_4_1,
-							win_4_2 = cache_win_r.out_4_2,
-							win_4_3 = cache_win_r.out_4_3,
-							win_4_4 = cache_win_r.out_4_4,
+							invoke conv_ch3(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch3.win_0_0_r, ker_r_0_1 = cache_ch3.win_0_1_r, ker_r_0_2 = cache_ch3.win_0_2_r, ker_r_0_3 = cache_ch3.win_0_3_r, ker_r_0_4 = cache_ch3.win_0_4_r,
+							    ker_r_1_0 = cache_ch3.win_1_0_r, ker_r_1_1 = cache_ch3.win_1_1_r, ker_r_1_2 = cache_ch3.win_1_2_r, ker_r_1_3 = cache_ch3.win_1_3_r, ker_r_1_4 = cache_ch3.win_1_4_r,
+							    ker_r_2_0 = cache_ch3.win_2_0_r, ker_r_2_1 = cache_ch3.win_2_1_r, ker_r_2_2 = cache_ch3.win_2_2_r, ker_r_2_3 = cache_ch3.win_2_3_r, ker_r_2_4 = cache_ch3.win_2_4_r,
+							    ker_r_3_0 = cache_ch3.win_3_0_r, ker_r_3_1 = cache_ch3.win_3_1_r, ker_r_3_2 = cache_ch3.win_3_2_r, ker_r_3_3 = cache_ch3.win_3_3_r, ker_r_3_4 = cache_ch3.win_3_4_r,
+							    ker_r_4_0 = cache_ch3.win_4_0_r, ker_r_4_1 = cache_ch3.win_4_1_r, ker_r_4_2 = cache_ch3.win_4_2_r, ker_r_4_3 = cache_ch3.win_4_3_r, ker_r_4_4 = cache_ch3.win_4_4_r,
+							    ker_g_0_0 = cache_ch3.win_0_0_g, ker_g_0_1 = cache_ch3.win_0_1_g, ker_g_0_2 = cache_ch3.win_0_2_g, ker_g_0_3 = cache_ch3.win_0_3_g, ker_g_0_4 = cache_ch3.win_0_4_g,
+							    ker_g_1_0 = cache_ch3.win_1_0_g, ker_g_1_1 = cache_ch3.win_1_1_g, ker_g_1_2 = cache_ch3.win_1_2_g, ker_g_1_3 = cache_ch3.win_1_3_g, ker_g_1_4 = cache_ch3.win_1_4_g,
+							    ker_g_2_0 = cache_ch3.win_2_0_g, ker_g_2_1 = cache_ch3.win_2_1_g, ker_g_2_2 = cache_ch3.win_2_2_g, ker_g_2_3 = cache_ch3.win_2_3_g, ker_g_2_4 = cache_ch3.win_2_4_g,
+							    ker_g_3_0 = cache_ch3.win_3_0_g, ker_g_3_1 = cache_ch3.win_3_1_g, ker_g_3_2 = cache_ch3.win_3_2_g, ker_g_3_3 = cache_ch3.win_3_3_g, ker_g_3_4 = cache_ch3.win_3_4_g,
+							    ker_g_4_0 = cache_ch3.win_4_0_g, ker_g_4_1 = cache_ch3.win_4_1_g, ker_g_4_2 = cache_ch3.win_4_2_g, ker_g_4_3 = cache_ch3.win_4_3_g, ker_g_4_4 = cache_ch3.win_4_4_g,
+							    ker_b_0_0 = cache_ch3.win_0_0_b, ker_b_0_1 = cache_ch3.win_0_1_b, ker_b_0_2 = cache_ch3.win_0_2_b, ker_b_0_3 = cache_ch3.win_0_3_b, ker_b_0_4 = cache_ch3.win_0_4_b,
+							    ker_b_1_0 = cache_ch3.win_1_0_b, ker_b_1_1 = cache_ch3.win_1_1_b, ker_b_1_2 = cache_ch3.win_1_2_b, ker_b_1_3 = cache_ch3.win_1_3_b, ker_b_1_4 = cache_ch3.win_1_4_b,
+							    ker_b_2_0 = cache_ch3.win_2_0_b, ker_b_2_1 = cache_ch3.win_2_1_b, ker_b_2_2 = cache_ch3.win_2_2_b, ker_b_2_3 = cache_ch3.win_2_3_b, ker_b_2_4 = cache_ch3.win_2_4_b,
+							    ker_b_3_0 = cache_ch3.win_3_0_b, ker_b_3_1 = cache_ch3.win_3_1_b, ker_b_3_2 = cache_ch3.win_3_2_b, ker_b_3_3 = cache_ch3.win_3_3_b, ker_b_3_4 = cache_ch3.win_3_4_b,
+							    ker_b_4_0 = cache_ch3.win_4_0_b, ker_b_4_1 = cache_ch3.win_4_1_b, ker_b_4_2 = cache_ch3.win_4_2_b, ker_b_4_3 = cache_ch3.win_4_3_b, ker_b_4_4 = cache_ch3.win_4_4_b
+							)();
 
-							ker_0_0 = cache.win_0_0_r,
-							ker_0_1 = cache.win_0_1_r,
-							ker_0_2 = cache.win_0_2_r,
-							ker_0_3 = cache.win_0_3_r,
-							ker_0_4 = cache.win_0_4_r,
+							invoke conv_ch4(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch4.win_0_0_r, ker_r_0_1 = cache_ch4.win_0_1_r, ker_r_0_2 = cache_ch4.win_0_2_r, ker_r_0_3 = cache_ch4.win_0_3_r, ker_r_0_4 = cache_ch4.win_0_4_r,
+							    ker_r_1_0 = cache_ch4.win_1_0_r, ker_r_1_1 = cache_ch4.win_1_1_r, ker_r_1_2 = cache_ch4.win_1_2_r, ker_r_1_3 = cache_ch4.win_1_3_r, ker_r_1_4 = cache_ch4.win_1_4_r,
+							    ker_r_2_0 = cache_ch4.win_2_0_r, ker_r_2_1 = cache_ch4.win_2_1_r, ker_r_2_2 = cache_ch4.win_2_2_r, ker_r_2_3 = cache_ch4.win_2_3_r, ker_r_2_4 = cache_ch4.win_2_4_r,
+							    ker_r_3_0 = cache_ch4.win_3_0_r, ker_r_3_1 = cache_ch4.win_3_1_r, ker_r_3_2 = cache_ch4.win_3_2_r, ker_r_3_3 = cache_ch4.win_3_3_r, ker_r_3_4 = cache_ch4.win_3_4_r,
+							    ker_r_4_0 = cache_ch4.win_4_0_r, ker_r_4_1 = cache_ch4.win_4_1_r, ker_r_4_2 = cache_ch4.win_4_2_r, ker_r_4_3 = cache_ch4.win_4_3_r, ker_r_4_4 = cache_ch4.win_4_4_r,
+							    ker_g_0_0 = cache_ch4.win_0_0_g, ker_g_0_1 = cache_ch4.win_0_1_g, ker_g_0_2 = cache_ch4.win_0_2_g, ker_g_0_3 = cache_ch4.win_0_3_g, ker_g_0_4 = cache_ch4.win_0_4_g,
+							    ker_g_1_0 = cache_ch4.win_1_0_g, ker_g_1_1 = cache_ch4.win_1_1_g, ker_g_1_2 = cache_ch4.win_1_2_g, ker_g_1_3 = cache_ch4.win_1_3_g, ker_g_1_4 = cache_ch4.win_1_4_g,
+							    ker_g_2_0 = cache_ch4.win_2_0_g, ker_g_2_1 = cache_ch4.win_2_1_g, ker_g_2_2 = cache_ch4.win_2_2_g, ker_g_2_3 = cache_ch4.win_2_3_g, ker_g_2_4 = cache_ch4.win_2_4_g,
+							    ker_g_3_0 = cache_ch4.win_3_0_g, ker_g_3_1 = cache_ch4.win_3_1_g, ker_g_3_2 = cache_ch4.win_3_2_g, ker_g_3_3 = cache_ch4.win_3_3_g, ker_g_3_4 = cache_ch4.win_3_4_g,
+							    ker_g_4_0 = cache_ch4.win_4_0_g, ker_g_4_1 = cache_ch4.win_4_1_g, ker_g_4_2 = cache_ch4.win_4_2_g, ker_g_4_3 = cache_ch4.win_4_3_g, ker_g_4_4 = cache_ch4.win_4_4_g,
+							    ker_b_0_0 = cache_ch4.win_0_0_b, ker_b_0_1 = cache_ch4.win_0_1_b, ker_b_0_2 = cache_ch4.win_0_2_b, ker_b_0_3 = cache_ch4.win_0_3_b, ker_b_0_4 = cache_ch4.win_0_4_b,
+							    ker_b_1_0 = cache_ch4.win_1_0_b, ker_b_1_1 = cache_ch4.win_1_1_b, ker_b_1_2 = cache_ch4.win_1_2_b, ker_b_1_3 = cache_ch4.win_1_3_b, ker_b_1_4 = cache_ch4.win_1_4_b,
+							    ker_b_2_0 = cache_ch4.win_2_0_b, ker_b_2_1 = cache_ch4.win_2_1_b, ker_b_2_2 = cache_ch4.win_2_2_b, ker_b_2_3 = cache_ch4.win_2_3_b, ker_b_2_4 = cache_ch4.win_2_4_b,
+							    ker_b_3_0 = cache_ch4.win_3_0_b, ker_b_3_1 = cache_ch4.win_3_1_b, ker_b_3_2 = cache_ch4.win_3_2_b, ker_b_3_3 = cache_ch4.win_3_3_b, ker_b_3_4 = cache_ch4.win_3_4_b,
+							    ker_b_4_0 = cache_ch4.win_4_0_b, ker_b_4_1 = cache_ch4.win_4_1_b, ker_b_4_2 = cache_ch4.win_4_2_b, ker_b_4_3 = cache_ch4.win_4_3_b, ker_b_4_4 = cache_ch4.win_4_4_b
+							)();
 
-							ker_1_0 = cache.win_1_0_r,
-							ker_1_1 = cache.win_1_1_r,
-							ker_1_2 = cache.win_1_2_r,
-							ker_1_3 = cache.win_1_3_r,
-							ker_1_4 = cache.win_1_4_r,
+							invoke conv_ch5(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch5.win_0_0_r, ker_r_0_1 = cache_ch5.win_0_1_r, ker_r_0_2 = cache_ch5.win_0_2_r, ker_r_0_3 = cache_ch5.win_0_3_r, ker_r_0_4 = cache_ch5.win_0_4_r,
+							    ker_r_1_0 = cache_ch5.win_1_0_r, ker_r_1_1 = cache_ch5.win_1_1_r, ker_r_1_2 = cache_ch5.win_1_2_r, ker_r_1_3 = cache_ch5.win_1_3_r, ker_r_1_4 = cache_ch5.win_1_4_r,
+							    ker_r_2_0 = cache_ch5.win_2_0_r, ker_r_2_1 = cache_ch5.win_2_1_r, ker_r_2_2 = cache_ch5.win_2_2_r, ker_r_2_3 = cache_ch5.win_2_3_r, ker_r_2_4 = cache_ch5.win_2_4_r,
+							    ker_r_3_0 = cache_ch5.win_3_0_r, ker_r_3_1 = cache_ch5.win_3_1_r, ker_r_3_2 = cache_ch5.win_3_2_r, ker_r_3_3 = cache_ch5.win_3_3_r, ker_r_3_4 = cache_ch5.win_3_4_r,
+							    ker_r_4_0 = cache_ch5.win_4_0_r, ker_r_4_1 = cache_ch5.win_4_1_r, ker_r_4_2 = cache_ch5.win_4_2_r, ker_r_4_3 = cache_ch5.win_4_3_r, ker_r_4_4 = cache_ch5.win_4_4_r,
+							    ker_g_0_0 = cache_ch5.win_0_0_g, ker_g_0_1 = cache_ch5.win_0_1_g, ker_g_0_2 = cache_ch5.win_0_2_g, ker_g_0_3 = cache_ch5.win_0_3_g, ker_g_0_4 = cache_ch5.win_0_4_g,
+							    ker_g_1_0 = cache_ch5.win_1_0_g, ker_g_1_1 = cache_ch5.win_1_1_g, ker_g_1_2 = cache_ch5.win_1_2_g, ker_g_1_3 = cache_ch5.win_1_3_g, ker_g_1_4 = cache_ch5.win_1_4_g,
+							    ker_g_2_0 = cache_ch5.win_2_0_g, ker_g_2_1 = cache_ch5.win_2_1_g, ker_g_2_2 = cache_ch5.win_2_2_g, ker_g_2_3 = cache_ch5.win_2_3_g, ker_g_2_4 = cache_ch5.win_2_4_g,
+							    ker_g_3_0 = cache_ch5.win_3_0_g, ker_g_3_1 = cache_ch5.win_3_1_g, ker_g_3_2 = cache_ch5.win_3_2_g, ker_g_3_3 = cache_ch5.win_3_3_g, ker_g_3_4 = cache_ch5.win_3_4_g,
+							    ker_g_4_0 = cache_ch5.win_4_0_g, ker_g_4_1 = cache_ch5.win_4_1_g, ker_g_4_2 = cache_ch5.win_4_2_g, ker_g_4_3 = cache_ch5.win_4_3_g, ker_g_4_4 = cache_ch5.win_4_4_g,
+							    ker_b_0_0 = cache_ch5.win_0_0_b, ker_b_0_1 = cache_ch5.win_0_1_b, ker_b_0_2 = cache_ch5.win_0_2_b, ker_b_0_3 = cache_ch5.win_0_3_b, ker_b_0_4 = cache_ch5.win_0_4_b,
+							    ker_b_1_0 = cache_ch5.win_1_0_b, ker_b_1_1 = cache_ch5.win_1_1_b, ker_b_1_2 = cache_ch5.win_1_2_b, ker_b_1_3 = cache_ch5.win_1_3_b, ker_b_1_4 = cache_ch5.win_1_4_b,
+							    ker_b_2_0 = cache_ch5.win_2_0_b, ker_b_2_1 = cache_ch5.win_2_1_b, ker_b_2_2 = cache_ch5.win_2_2_b, ker_b_2_3 = cache_ch5.win_2_3_b, ker_b_2_4 = cache_ch5.win_2_4_b,
+							    ker_b_3_0 = cache_ch5.win_3_0_b, ker_b_3_1 = cache_ch5.win_3_1_b, ker_b_3_2 = cache_ch5.win_3_2_b, ker_b_3_3 = cache_ch5.win_3_3_b, ker_b_3_4 = cache_ch5.win_3_4_b,
+							    ker_b_4_0 = cache_ch5.win_4_0_b, ker_b_4_1 = cache_ch5.win_4_1_b, ker_b_4_2 = cache_ch5.win_4_2_b, ker_b_4_3 = cache_ch5.win_4_3_b, ker_b_4_4 = cache_ch5.win_4_4_b
+							)();
 
-							ker_2_0 = cache.win_2_0_r,
-							ker_2_1 = cache.win_2_1_r,
-							ker_2_2 = cache.win_2_2_r,
-							ker_2_3 = cache.win_2_3_r,
-							ker_2_4 = cache.win_2_4_r,
+							invoke conv_ch6(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch6.win_0_0_r, ker_r_0_1 = cache_ch6.win_0_1_r, ker_r_0_2 = cache_ch6.win_0_2_r, ker_r_0_3 = cache_ch6.win_0_3_r, ker_r_0_4 = cache_ch6.win_0_4_r,
+							    ker_r_1_0 = cache_ch6.win_1_0_r, ker_r_1_1 = cache_ch6.win_1_1_r, ker_r_1_2 = cache_ch6.win_1_2_r, ker_r_1_3 = cache_ch6.win_1_3_r, ker_r_1_4 = cache_ch6.win_1_4_r,
+							    ker_r_2_0 = cache_ch6.win_2_0_r, ker_r_2_1 = cache_ch6.win_2_1_r, ker_r_2_2 = cache_ch6.win_2_2_r, ker_r_2_3 = cache_ch6.win_2_3_r, ker_r_2_4 = cache_ch6.win_2_4_r,
+							    ker_r_3_0 = cache_ch6.win_3_0_r, ker_r_3_1 = cache_ch6.win_3_1_r, ker_r_3_2 = cache_ch6.win_3_2_r, ker_r_3_3 = cache_ch6.win_3_3_r, ker_r_3_4 = cache_ch6.win_3_4_r,
+							    ker_r_4_0 = cache_ch6.win_4_0_r, ker_r_4_1 = cache_ch6.win_4_1_r, ker_r_4_2 = cache_ch6.win_4_2_r, ker_r_4_3 = cache_ch6.win_4_3_r, ker_r_4_4 = cache_ch6.win_4_4_r,
+							    ker_g_0_0 = cache_ch6.win_0_0_g, ker_g_0_1 = cache_ch6.win_0_1_g, ker_g_0_2 = cache_ch6.win_0_2_g, ker_g_0_3 = cache_ch6.win_0_3_g, ker_g_0_4 = cache_ch6.win_0_4_g,
+							    ker_g_1_0 = cache_ch6.win_1_0_g, ker_g_1_1 = cache_ch6.win_1_1_g, ker_g_1_2 = cache_ch6.win_1_2_g, ker_g_1_3 = cache_ch6.win_1_3_g, ker_g_1_4 = cache_ch6.win_1_4_g,
+							    ker_g_2_0 = cache_ch6.win_2_0_g, ker_g_2_1 = cache_ch6.win_2_1_g, ker_g_2_2 = cache_ch6.win_2_2_g, ker_g_2_3 = cache_ch6.win_2_3_g, ker_g_2_4 = cache_ch6.win_2_4_g,
+							    ker_g_3_0 = cache_ch6.win_3_0_g, ker_g_3_1 = cache_ch6.win_3_1_g, ker_g_3_2 = cache_ch6.win_3_2_g, ker_g_3_3 = cache_ch6.win_3_3_g, ker_g_3_4 = cache_ch6.win_3_4_g,
+							    ker_g_4_0 = cache_ch6.win_4_0_g, ker_g_4_1 = cache_ch6.win_4_1_g, ker_g_4_2 = cache_ch6.win_4_2_g, ker_g_4_3 = cache_ch6.win_4_3_g, ker_g_4_4 = cache_ch6.win_4_4_g,
+							    ker_b_0_0 = cache_ch6.win_0_0_b, ker_b_0_1 = cache_ch6.win_0_1_b, ker_b_0_2 = cache_ch6.win_0_2_b, ker_b_0_3 = cache_ch6.win_0_3_b, ker_b_0_4 = cache_ch6.win_0_4_b,
+							    ker_b_1_0 = cache_ch6.win_1_0_b, ker_b_1_1 = cache_ch6.win_1_1_b, ker_b_1_2 = cache_ch6.win_1_2_b, ker_b_1_3 = cache_ch6.win_1_3_b, ker_b_1_4 = cache_ch6.win_1_4_b,
+							    ker_b_2_0 = cache_ch6.win_2_0_b, ker_b_2_1 = cache_ch6.win_2_1_b, ker_b_2_2 = cache_ch6.win_2_2_b, ker_b_2_3 = cache_ch6.win_2_3_b, ker_b_2_4 = cache_ch6.win_2_4_b,
+							    ker_b_3_0 = cache_ch6.win_3_0_b, ker_b_3_1 = cache_ch6.win_3_1_b, ker_b_3_2 = cache_ch6.win_3_2_b, ker_b_3_3 = cache_ch6.win_3_3_b, ker_b_3_4 = cache_ch6.win_3_4_b,
+							    ker_b_4_0 = cache_ch6.win_4_0_b, ker_b_4_1 = cache_ch6.win_4_1_b, ker_b_4_2 = cache_ch6.win_4_2_b, ker_b_4_3 = cache_ch6.win_4_3_b, ker_b_4_4 = cache_ch6.win_4_4_b
+							)();
 
-							ker_3_0 = cache.win_3_0_r,
-							ker_3_1 = cache.win_3_1_r,
-							ker_3_2 = cache.win_3_2_r,
-							ker_3_3 = cache.win_3_3_r,
-							ker_3_4 = cache.win_3_4_r,
+							invoke conv_ch7(
+							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
+							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
+							    win_r_2_0 = cache_win_r.out_2_0, win_r_2_1 = cache_win_r.out_2_1, win_r_2_2 = cache_win_r.out_2_2, win_r_2_3 = cache_win_r.out_2_3, win_r_2_4 = cache_win_r.out_2_4,
+							    win_r_3_0 = cache_win_r.out_3_0, win_r_3_1 = cache_win_r.out_3_1, win_r_3_2 = cache_win_r.out_3_2, win_r_3_3 = cache_win_r.out_3_3, win_r_3_4 = cache_win_r.out_3_4,
+							    win_r_4_0 = cache_win_r.out_4_0, win_r_4_1 = cache_win_r.out_4_1, win_r_4_2 = cache_win_r.out_4_2, win_r_4_3 = cache_win_r.out_4_3, win_r_4_4 = cache_win_r.out_4_4,
+							    win_g_0_0 = cache_win_g.out_0_0, win_g_0_1 = cache_win_g.out_0_1, win_g_0_2 = cache_win_g.out_0_2, win_g_0_3 = cache_win_g.out_0_3, win_g_0_4 = cache_win_g.out_0_4,
+							    win_g_1_0 = cache_win_g.out_1_0, win_g_1_1 = cache_win_g.out_1_1, win_g_1_2 = cache_win_g.out_1_2, win_g_1_3 = cache_win_g.out_1_3, win_g_1_4 = cache_win_g.out_1_4,
+							    win_g_2_0 = cache_win_g.out_2_0, win_g_2_1 = cache_win_g.out_2_1, win_g_2_2 = cache_win_g.out_2_2, win_g_2_3 = cache_win_g.out_2_3, win_g_2_4 = cache_win_g.out_2_4,
+							    win_g_3_0 = cache_win_g.out_3_0, win_g_3_1 = cache_win_g.out_3_1, win_g_3_2 = cache_win_g.out_3_2, win_g_3_3 = cache_win_g.out_3_3, win_g_3_4 = cache_win_g.out_3_4,
+							    win_g_4_0 = cache_win_g.out_4_0, win_g_4_1 = cache_win_g.out_4_1, win_g_4_2 = cache_win_g.out_4_2, win_g_4_3 = cache_win_g.out_4_3, win_g_4_4 = cache_win_g.out_4_4,
+							    win_b_0_0 = cache_win_b.out_0_0, win_b_0_1 = cache_win_b.out_0_1, win_b_0_2 = cache_win_b.out_0_2, win_b_0_3 = cache_win_b.out_0_3, win_b_0_4 = cache_win_b.out_0_4,
+							    win_b_1_0 = cache_win_b.out_1_0, win_b_1_1 = cache_win_b.out_1_1, win_b_1_2 = cache_win_b.out_1_2, win_b_1_3 = cache_win_b.out_1_3, win_b_1_4 = cache_win_b.out_1_4,
+							    win_b_2_0 = cache_win_b.out_2_0, win_b_2_1 = cache_win_b.out_2_1, win_b_2_2 = cache_win_b.out_2_2, win_b_2_3 = cache_win_b.out_2_3, win_b_2_4 = cache_win_b.out_2_4,
+							    win_b_3_0 = cache_win_b.out_3_0, win_b_3_1 = cache_win_b.out_3_1, win_b_3_2 = cache_win_b.out_3_2, win_b_3_3 = cache_win_b.out_3_3, win_b_3_4 = cache_win_b.out_3_4,
+							    win_b_4_0 = cache_win_b.out_4_0, win_b_4_1 = cache_win_b.out_4_1, win_b_4_2 = cache_win_b.out_4_2, win_b_4_3 = cache_win_b.out_4_3, win_b_4_4 = cache_win_b.out_4_4,
+							    ker_r_0_0 = cache_ch7.win_0_0_r, ker_r_0_1 = cache_ch7.win_0_1_r, ker_r_0_2 = cache_ch7.win_0_2_r, ker_r_0_3 = cache_ch7.win_0_3_r, ker_r_0_4 = cache_ch7.win_0_4_r,
+							    ker_r_1_0 = cache_ch7.win_1_0_r, ker_r_1_1 = cache_ch7.win_1_1_r, ker_r_1_2 = cache_ch7.win_1_2_r, ker_r_1_3 = cache_ch7.win_1_3_r, ker_r_1_4 = cache_ch7.win_1_4_r,
+							    ker_r_2_0 = cache_ch7.win_2_0_r, ker_r_2_1 = cache_ch7.win_2_1_r, ker_r_2_2 = cache_ch7.win_2_2_r, ker_r_2_3 = cache_ch7.win_2_3_r, ker_r_2_4 = cache_ch7.win_2_4_r,
+							    ker_r_3_0 = cache_ch7.win_3_0_r, ker_r_3_1 = cache_ch7.win_3_1_r, ker_r_3_2 = cache_ch7.win_3_2_r, ker_r_3_3 = cache_ch7.win_3_3_r, ker_r_3_4 = cache_ch7.win_3_4_r,
+							    ker_r_4_0 = cache_ch7.win_4_0_r, ker_r_4_1 = cache_ch7.win_4_1_r, ker_r_4_2 = cache_ch7.win_4_2_r, ker_r_4_3 = cache_ch7.win_4_3_r, ker_r_4_4 = cache_ch7.win_4_4_r,
+							    ker_g_0_0 = cache_ch7.win_0_0_g, ker_g_0_1 = cache_ch7.win_0_1_g, ker_g_0_2 = cache_ch7.win_0_2_g, ker_g_0_3 = cache_ch7.win_0_3_g, ker_g_0_4 = cache_ch7.win_0_4_g,
+							    ker_g_1_0 = cache_ch7.win_1_0_g, ker_g_1_1 = cache_ch7.win_1_1_g, ker_g_1_2 = cache_ch7.win_1_2_g, ker_g_1_3 = cache_ch7.win_1_3_g, ker_g_1_4 = cache_ch7.win_1_4_g,
+							    ker_g_2_0 = cache_ch7.win_2_0_g, ker_g_2_1 = cache_ch7.win_2_1_g, ker_g_2_2 = cache_ch7.win_2_2_g, ker_g_2_3 = cache_ch7.win_2_3_g, ker_g_2_4 = cache_ch7.win_2_4_g,
+							    ker_g_3_0 = cache_ch7.win_3_0_g, ker_g_3_1 = cache_ch7.win_3_1_g, ker_g_3_2 = cache_ch7.win_3_2_g, ker_g_3_3 = cache_ch7.win_3_3_g, ker_g_3_4 = cache_ch7.win_3_4_g,
+							    ker_g_4_0 = cache_ch7.win_4_0_g, ker_g_4_1 = cache_ch7.win_4_1_g, ker_g_4_2 = cache_ch7.win_4_2_g, ker_g_4_3 = cache_ch7.win_4_3_g, ker_g_4_4 = cache_ch7.win_4_4_g,
+							    ker_b_0_0 = cache_ch7.win_0_0_b, ker_b_0_1 = cache_ch7.win_0_1_b, ker_b_0_2 = cache_ch7.win_0_2_b, ker_b_0_3 = cache_ch7.win_0_3_b, ker_b_0_4 = cache_ch7.win_0_4_b,
+							    ker_b_1_0 = cache_ch7.win_1_0_b, ker_b_1_1 = cache_ch7.win_1_1_b, ker_b_1_2 = cache_ch7.win_1_2_b, ker_b_1_3 = cache_ch7.win_1_3_b, ker_b_1_4 = cache_ch7.win_1_4_b,
+							    ker_b_2_0 = cache_ch7.win_2_0_b, ker_b_2_1 = cache_ch7.win_2_1_b, ker_b_2_2 = cache_ch7.win_2_2_b, ker_b_2_3 = cache_ch7.win_2_3_b, ker_b_2_4 = cache_ch7.win_2_4_b,
+							    ker_b_3_0 = cache_ch7.win_3_0_b, ker_b_3_1 = cache_ch7.win_3_1_b, ker_b_3_2 = cache_ch7.win_3_2_b, ker_b_3_3 = cache_ch7.win_3_3_b, ker_b_3_4 = cache_ch7.win_3_4_b,
+							    ker_b_4_0 = cache_ch7.win_4_0_b, ker_b_4_1 = cache_ch7.win_4_1_b, ker_b_4_2 = cache_ch7.win_4_2_b, ker_b_4_3 = cache_ch7.win_4_3_b, ker_b_4_4 = cache_ch7.win_4_4_b
+							)();
+	                    }
 
-							ker_4_0 = cache.win_4_0_r,
-							ker_4_1 = cache.win_4_1_r,
-							ker_4_2 = cache.win_4_2_r,
-							ker_4_3 = cache.win_4_3_r,
-							ker_4_4 = cache.win_4_4_r
-						)();
+					    par {
 
-						invoke conv_g(
-						    win_0_0 = cache_win_g.out_0_0,
-						    win_0_1 = cache_win_g.out_0_1,
-						    win_0_2 = cache_win_g.out_0_2,
-						    win_0_3 = cache_win_g.out_0_3,
-						    win_0_4 = cache_win_g.out_0_4,
+                            invoke pool_ch0(pixel_in = conv_ch0.out)();
+                            invoke pool_ch1(pixel_in = conv_ch1.out)();
+                            invoke pool_ch2(pixel_in = conv_ch2.out)();
+                            invoke pool_ch3(pixel_in = conv_ch3.out)();
+                            invoke pool_ch4(pixel_in = conv_ch4.out)();
+                            invoke pool_ch5(pixel_in = conv_ch5.out)();
+                            invoke pool_ch6(pixel_in = conv_ch6.out)();
+                            invoke pool_ch7(pixel_in = conv_ch7.out)();
 
-						    win_1_0 = cache_win_g.out_1_0,
-						    win_1_1 = cache_win_g.out_1_1,
-						    win_1_2 = cache_win_g.out_1_2,
-						    win_1_3 = cache_win_g.out_1_3,
-						    win_1_4 = cache_win_g.out_1_4,
+						}
+						update_pool_status;
 
-						    win_2_0 = cache_win_g.out_2_0,
-						    win_2_1 = cache_win_g.out_2_1,
-						    win_2_2 = cache_win_g.out_2_2,
-						    win_2_3 = cache_win_g.out_2_3,
-						    win_2_4 = cache_win_g.out_2_4,
-
-						    win_3_0 = cache_win_g.out_3_0,
-						    win_3_1 = cache_win_g.out_3_1,
-						    win_3_2 = cache_win_g.out_3_2,
-						    win_3_3 = cache_win_g.out_3_3,
-						    win_3_4 = cache_win_g.out_3_4,
-
-						    win_4_0 = cache_win_g.out_4_0,
-						    win_4_1 = cache_win_g.out_4_1,
-						    win_4_2 = cache_win_g.out_4_2,
-						    win_4_3 = cache_win_g.out_4_3,
-						    win_4_4 = cache_win_g.out_4_4,
-
-						    ker_0_0 = cache.win_0_0_g,
-						    ker_0_1 = cache.win_0_1_g,
-						    ker_0_2 = cache.win_0_2_g,
-						    ker_0_3 = cache.win_0_3_g,
-						    ker_0_4 = cache.win_0_4_g,
-
-						    ker_1_0 = cache.win_1_0_g,
-						    ker_1_1 = cache.win_1_1_g,
-						    ker_1_2 = cache.win_1_2_g,
-						    ker_1_3 = cache.win_1_3_g,
-						    ker_1_4 = cache.win_1_4_g,
-
-						    ker_2_0 = cache.win_2_0_g,
-						    ker_2_1 = cache.win_2_0_g,
-						    ker_2_2 = cache.win_2_2_g,
-						    ker_2_3 = cache.win_2_3_g,
-						    ker_2_4 = cache.win_2_4_g,
-
-						    ker_3_0 = cache.win_3_0_g,
-						    ker_3_1 = cache.win_3_1_g,
-						    ker_3_2 = cache.win_3_2_g,
-						    ker_3_3 = cache.win_3_3_g,
-						    ker_3_4 = cache.win_3_4_g,
-
-						    ker_4_0 = cache.win_4_0_g,
-						    ker_4_1 = cache.win_4_1_g,
-						    ker_4_2 = cache.win_4_2_g,
-						    ker_4_3 = cache.win_4_3_g,
-						    ker_4_4 = cache.win_4_4_g
-						)();
-
-						invoke conv_b(
-							win_0_0 = cache_win_b.out_0_0,
-							win_0_1 = cache_win_b.out_0_1,
-							win_0_2 = cache_win_b.out_0_2,
-							win_0_3 = cache_win_b.out_0_3,
-							win_0_4 = cache_win_b.out_0_4,
-
-							win_1_0 = cache_win_b.out_1_0,
-							win_1_1 = cache_win_b.out_1_1,
-							win_1_2 = cache_win_b.out_1_2,
-							win_1_3 = cache_win_b.out_1_3,
-							win_1_4 = cache_win_b.out_1_4,
-
-							win_2_0 = cache_win_b.out_2_0,
-							win_2_1 = cache_win_b.out_2_1,
-							win_2_2 = cache_win_b.out_2_2,
-							win_2_3 = cache_win_b.out_2_3,
-							win_2_4 = cache_win_b.out_2_4,
-
-							win_3_0 = cache_win_b.out_3_0,
-							win_3_1 = cache_win_b.out_3_1,
-							win_3_2 = cache_win_b.out_3_2,
-							win_3_3 = cache_win_b.out_3_3,
-							win_3_4 = cache_win_b.out_3_4,
-
-							win_4_0 = cache_win_b.out_4_0,
-							win_4_1 = cache_win_b.out_4_1,
-							win_4_2 = cache_win_b.out_4_2,
-							win_4_3 = cache_win_b.out_4_3,
-							win_4_4 = cache_win_b.out_4_4,
-
-							ker_0_0 = cache.win_0_0_b,
-							ker_0_1 = cache.win_0_1_b,
-							ker_0_2 = cache.win_0_2_b,
-							ker_0_3 = cache.win_0_3_b,
-							ker_0_4 = cache.win_0_4_b,
-
-							ker_1_0 = cache.win_1_0_b,
-							ker_1_1 = cache.win_1_1_b,
-							ker_1_2 = cache.win_1_2_b,
-							ker_1_3 = cache.win_1_3_b,
-							ker_1_4 = cache.win_1_4_b,
-
-							ker_2_0 = cache.win_2_0_b,
-							ker_2_1 = cache.win_2_1_b,
-							ker_2_2 = cache.win_2_2_b,
-							ker_2_3 = cache.win_2_3_b,
-							ker_2_4 = cache.win_2_4_b,
-
-							ker_3_0 = cache.win_3_0_b,
-							ker_3_1 = cache.win_3_1_b,
-							ker_3_2 = cache.win_3_2_b,
-							ker_3_3 = cache.win_3_3_b,
-							ker_3_4 = cache.win_3_4_b,
-
-							ker_4_0 = cache.win_4_0_b,
-							ker_4_1 = cache.win_4_1_b,
-							ker_4_2 = cache.win_4_2_b,
-							ker_4_3 = cache.win_4_3_b,
-							ker_4_4 = cache.win_4_4_b
-						)();
+						if should_pool {
+                            // do max pool and all
+						}
                     }
                 }
             }
