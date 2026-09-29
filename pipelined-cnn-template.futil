@@ -850,6 +850,7 @@ component lineBuffer_1(pixel_in: 32, @go go: 1) -> (
   }
 
   wires {
+    out = valid.out;
     win_0_0 = reg_0_0.out; win_0_1 = reg_0_1.out; win_0_2 = reg_0_2.out;
     win_1_0 = reg_1_0.out; win_1_1 = reg_1_1.out; win_1_2 = reg_1_2.out;
 
@@ -895,7 +896,7 @@ component lineBuffer_1(pixel_in: 32, @go go: 1) -> (
     group incr_ptrs {
 
         eq.left = reg_col_count.out;
-        eq.right = 32'd56;
+        eq.right = 32'd55;
 
         adder0.left = reg_col_count.out;
         adder0.right = one.out;
@@ -1078,6 +1079,14 @@ component main(@go go: 1) -> (@done done: 1) {
      pool_ch6 = lineBuffer_1();
      pool_ch7 = lineBuffer_1();
 
+     max6_ch0 = max6();
+     max6_ch1 = max6();
+     max6_ch2 = max6();
+     max6_ch3 = max6();
+     max6_ch4 = max6();
+     max6_ch5 = max6();
+     max6_ch6 = max6();
+     max6_ch7 = max6();
 
      cache_ch0 = filter_cache();
      cache_ch1 = filter_cache();
@@ -1144,13 +1153,13 @@ component main(@go go: 1) -> (@done done: 1) {
         incr_idx[done] = idx.done;
      }
 
-     group debug_dump {
-	    out_mem.addr0 = 32'd0;
-	    out_mem.write_data = conv_ch0.out;
-	    out_mem.write_en = 1'd1;
-	    out_mem.content_en = 1'd1;
-	    debug_dump[done] = out_mem.done;
-	}
+     //group debug_dump {
+	 //   out_mem.addr0 = 32'd0;
+	 //   out_mem.write_data = max6_ch0.out;
+	 //   out_mem.write_en = 1'd1;
+	 //   out_mem.content_en = 1'd1;
+	 //   debug_dump[done] = out_mem.done;
+	//}
 
      //group reset_idx {
      //   idx.write_en = 1'd1;
@@ -1192,7 +1201,7 @@ component main(@go go: 1) -> (@done done: 1) {
      group update_pool_status {
          should_pool.write_en = 1'd1;
          should_pool.in = pool_ch7.out;
-         update_pool_status[done] = update_pool_status.done;
+         update_pool_status[done] = should_pool.done;
      }
 
   }
@@ -1267,6 +1276,7 @@ component main(@go go: 1) -> (@done done: 1) {
                             read_pixels_g;
                             read_pixels_b;
                         }
+
                         par {
                             invoke linebuffer_r(pixel_in = pixel_reg_r.out)();
                             invoke linebuffer_g(pixel_in = pixel_reg_g.out)();
@@ -1303,7 +1313,7 @@ component main(@go go: 1) -> (@done done: 1) {
                     update_valid_bit;
                     // Perform Convolution
                     if should_convolve.out {
-	                    par {
+						par {
 							invoke conv_ch0(
 							    win_r_0_0 = cache_win_r.out_0_0, win_r_0_1 = cache_win_r.out_0_1, win_r_0_2 = cache_win_r.out_0_2, win_r_0_3 = cache_win_r.out_0_3, win_r_0_4 = cache_win_r.out_0_4,
 							    win_r_1_0 = cache_win_r.out_1_0, win_r_1_1 = cache_win_r.out_1_1, win_r_1_2 = cache_win_r.out_1_2, win_r_1_3 = cache_win_r.out_1_3, win_r_1_4 = cache_win_r.out_1_4,
@@ -1567,7 +1577,7 @@ component main(@go go: 1) -> (@done done: 1) {
 							    ker_b_3_0 = cache_ch7.win_3_0_b, ker_b_3_1 = cache_ch7.win_3_1_b, ker_b_3_2 = cache_ch7.win_3_2_b, ker_b_3_3 = cache_ch7.win_3_3_b, ker_b_3_4 = cache_ch7.win_3_4_b,
 							    ker_b_4_0 = cache_ch7.win_4_0_b, ker_b_4_1 = cache_ch7.win_4_1_b, ker_b_4_2 = cache_ch7.win_4_2_b, ker_b_4_3 = cache_ch7.win_4_3_b, ker_b_4_4 = cache_ch7.win_4_4_b
 							)();
-	                    }
+						}
 
 					    par {
 
@@ -1579,12 +1589,77 @@ component main(@go go: 1) -> (@done done: 1) {
                             invoke pool_ch5(pixel_in = conv_ch5.out)();
                             invoke pool_ch6(pixel_in = conv_ch6.out)();
                             invoke pool_ch7(pixel_in = conv_ch7.out)();
-
 						}
+
 						update_pool_status;
 
-						if should_pool {
-                            // do max pool and all
+						if should_pool.out {
+                            par {
+                                invoke max6_ch0(in0 = pool_ch0.win_0_0,
+                                                in1 = pool_ch0.win_0_1,
+                                                in2 = pool_ch0.win_0_2,
+                                                in3 = pool_ch0.win_1_0,
+                                                in4 = pool_ch0.win_1_1,
+                                                in5 = pool_ch0.win_1_2
+                                )();
+
+                                invoke max6_ch1(in0 = pool_ch1.win_0_0,
+                                                in1 = pool_ch1.win_0_1,
+                                                in2 = pool_ch1.win_0_2,
+                                                in3 = pool_ch1.win_1_0,
+                                                in4 = pool_ch1.win_1_1,
+                                                in5 = pool_ch1.win_1_2
+                                )();
+
+                                invoke max6_ch2(in0 = pool_ch2.win_0_0,
+                                                in1 = pool_ch2.win_0_1,
+                                                in2 = pool_ch2.win_0_2,
+                                                in3 = pool_ch2.win_1_0,
+                                                in4 = pool_ch2.win_1_1,
+                                                in5 = pool_ch2.win_1_2
+                                )();
+
+                                invoke max6_ch3(in0 = pool_ch3.win_0_0,
+                                                in1 = pool_ch3.win_0_1,
+                                                in2 = pool_ch3.win_0_2,
+                                                in3 = pool_ch3.win_1_0,
+                                                in4 = pool_ch3.win_1_1,
+                                                in5 = pool_ch3.win_1_2
+                                )();
+
+                                invoke max6_ch4(in0 = pool_ch4.win_0_0,
+                                                in1 = pool_ch4.win_0_1,
+                                                in2 = pool_ch4.win_0_2,
+                                                in3 = pool_ch4.win_1_0,
+                                                in4 = pool_ch4.win_1_1,
+                                                in5 = pool_ch4.win_1_2
+                                )();
+
+                                invoke max6_ch5(in0 = pool_ch5.win_0_0,
+                                                in1 = pool_ch5.win_0_1,
+                                                in2 = pool_ch5.win_0_2,
+                                                in3 = pool_ch5.win_1_0,
+                                                in4 = pool_ch5.win_1_1,
+                                                in5 = pool_ch5.win_1_2
+                                )();
+
+                                invoke max6_ch6(in0 = pool_ch6.win_0_0,
+                                                in1 = pool_ch6.win_0_1,
+                                                in2 = pool_ch6.win_0_2,
+                                                in3 = pool_ch6.win_1_0,
+                                                in4 = pool_ch6.win_1_1,
+                                                in5 = pool_ch6.win_1_2
+                                )();
+
+                                invoke max6_ch7(in0 = pool_ch7.win_0_0,
+                                                in1 = pool_ch7.win_0_1,
+                                                in2 = pool_ch7.win_0_2,
+                                                in3 = pool_ch7.win_1_0,
+                                                in4 = pool_ch7.win_1_1,
+                                                in5 = pool_ch7.win_1_2
+                                )();
+
+                            }
 						}
                     }
                 }
